@@ -1,0 +1,28 @@
+{
+	"name" : "DynamicsCRM/Connector",
+	"type" : "symfony-bundle",
+	"keywords" : [
+		"Dynamics CRM",
+		"2011",
+		"NTLM",
+		"auth",
+		"connector"
+	],
+	"license" : "GPL-3.0+",
+	"authors" : [{
+			"name" : "Yannick Camus",
+			"email" : "yannick.camus@gmail.com"
+		}
+	],
+	"require" : {
+		"php" : ">=5.3.2",
+		"symfony/framework-bundle" : ">=2.1"
+	},
+	"autoload" : {
+		"psr-0" : {
+			"DynamicsCRM\\Connector" : ""
+		}
+	},
+	"target-dir" : "DynamicsCRM//Connector",
+	"minimum-stability" : "dev"
+}
