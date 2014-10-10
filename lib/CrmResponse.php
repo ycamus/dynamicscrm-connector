@@ -1,5 +1,5 @@
 <?php
-namespace dynamics-crm\connector\lib\CrmResponse;
+namespace dynamicscrm\connector\lib\CrmResponse;
 /**
  * DynamicsCrm
  *

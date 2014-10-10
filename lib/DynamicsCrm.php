@@ -1,7 +1,7 @@
 <?php
-namespace dynamics-crm\connector\lib\DynamicsCrm;
+namespace dynamicscrm\connector\lib\DynamicsCrm;
 
-use DynamicsCRM\Connector\lib\CrmResponse;
+use dynamicscrm\connector\lib\CrmResponse;
 use Symfony\Component\HttpFoundation\HeaderBag;
 /*! \mainpage DynamicsCrm
  *
