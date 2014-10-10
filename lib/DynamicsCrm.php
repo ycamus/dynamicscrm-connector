@@ -1,7 +1,4 @@
 <?php
-
-namespace DynamicsCrm
-use CrmResponse;
 use Symfony\Component\HttpFoundation\HeaderBag;
 /*! \mainpage DynamicsCrm
  *

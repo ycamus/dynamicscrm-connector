@@ -19,10 +19,9 @@
 		"symfony/framework-bundle" : ">=2.1"
 	},
 	"autoload" : {
-		"psr-0" : {
-			"DynamicsCrm" : "lib"
-		}
+		 "classmap": ["lib/"]
+		
 	},
-	"target-dir" : "DynamicsCrm",
+	
 	"minimum-stability" : "dev"
 }
