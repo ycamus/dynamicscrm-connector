@@ -1,5 +1,5 @@
 <?php
-namespace dynamicscrm\connector\lib\DynamicsCrm;
+namespace dynamicscrm\connector\lib;
 
 use dynamicscrm\connector\lib\CrmResponse;
 use Symfony\Component\HttpFoundation\HeaderBag;
