@@ -3,15 +3,25 @@ use Symfony\Component\HttpFoundation\HeaderBag;
 /*! \mainpage DynamicsCrm
  *
  * \section Installation
+ *  if by any mean you dont get the bundle from packagist add to you composer.json under require\\n  
+ 
+  *      "dynamicscrm/connector" : "dev-master"
+  
+  * to you composer.json\n
+  * and then : \n
  *
- * Copy bundle in Vendor\n
- * Go to composer/autoload_files.php\n
- * add :\n
- * 		$vendorDir . '/DynamicsCrm/Connector/lib/class.CrmResponse.php',\n
- *		$vendorDir . '/DynamicsCrm/Connector/lib/class.DynamicsCrm.php',\n
+ *      composer install
  *
- *		\n\n
- *		enjoy the bundle
+ *or 
+ *
+ *      composer update
+ *
+ *enjoy the bundle\n\n
+ *
+ *Example:\n\n
+ 
+ *      $DynamicsCrm=new DynamicsCrm($serv_adress, $user, $password);
+ *      $result=$DynamicsCrm->Retrieve($Table, $Id, $Columns);
  *
  **/
 /**
