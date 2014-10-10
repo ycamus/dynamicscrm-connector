@@ -1,5 +1,5 @@
 {
-	"name" : "DynamicsCRM/Connector",
+	"name" : "dynamics-crm/connector",
 	"type" : "symfony-bundle",
 	"keywords" : [
 		"Dynamics CRM",
@@ -20,9 +20,9 @@
 	},
 	"autoload" : {
 		"psr-0" : {
-			"DynamicsCRM\\Connector" : ""
+			"dynamics-crm\\connector" : ""
 		}
 	},
-	"target-dir" : "DynamicsCRM//Connector",
+	"target-dir" : "dynamics-crm//connector",
 	"minimum-stability" : "dev"
 }
