@@ -20,8 +20,9 @@
 	},
 	"autoload" : {
 		"psr-0" : {
-			"dynamicscrm\\connector\\lib" : ""
+			"DynamicsCrm" : "lib"
 		}
 	},
+	"target-dir" : "DynamicsCrm",
 	"minimum-stability" : "dev"
 }
