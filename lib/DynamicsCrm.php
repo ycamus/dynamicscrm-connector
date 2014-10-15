@@ -180,7 +180,9 @@ class DynamicsCrm {
 	 *</p>
 	 */
 	public function RetrieveMultiple($Table, $Where, $Columns, $Join=false ,$Order = false) {
-		$Aggregate=($this->array_key_exists_r('aggregate', $Columns))?'true':'false';
+		if(is_array($Columns))$Aggregate=($this->array_key_exists_r('aggregate', $Columns))?'true':'false';
+		else $Aggregate='false';
+		
 		$SoapEnvelope = '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 				 			 <s:Body>
 				    			<RetrieveMultiple xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
