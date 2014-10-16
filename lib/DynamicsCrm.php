@@ -1,29 +1,30 @@
 <?php
 use Symfony\Component\HttpFoundation\HeaderBag;
-/*! \mainpage DynamicsCrm
+/*
+ * ! \mainpage DynamicsCrm
  *
  * \section Installation
- *  if by any mean you dont get the bundle from packagist add to you composer.json under require\\n  
- 
-  *      "dynamicscrm/connector" : "dev-master"
-  
-  * to you composer.json\n
-  * and then : \n
+ * if by any mean you dont get the bundle from packagist add to you composer.json under require\\n
  *
- *      composer install
+ * "dynamicscrm/connector" : "dev-master"
  *
- *or 
+ * to you composer.json\n
+ * and then : \n
  *
- *      composer update
+ * composer install
  *
- *enjoy the bundle\n\n
+ * or
  *
- *Example:\n\n
- 
- *      $DynamicsCrm=new DynamicsCrm($serv_adress, $user, $password);
- *      $result=$DynamicsCrm->Retrieve($Table, $Id, $Columns);
+ * composer update
  *
- **/
+ * enjoy the bundle\n\n
+ *
+ * Example:\n\n
+ *
+ * $DynamicsCrm=new DynamicsCrm($serv_adress, $user, $password);
+ * $result=$DynamicsCrm->Retrieve($Table, $Id, $Columns);
+ *
+ */
 /**
  * DynamicsCrm
  *
@@ -49,19 +50,19 @@ use Symfony\Component\HttpFoundation\HeaderBag;
  * @license http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt	LGPL
  * @version 0.0.1, 2014-10-06
  *         
- *      
+ *         
  */
 
-
-/*! \brief Connector and basic operation from PHP to CRM using NTLM and curl.
- *         
- *This connector load from a simple login/password/url (/web) \n
- *it has the update/create/retrieve functionnality\n
- *AND RetrieveMultiple based on FetchXML wich allow to make some powerfull request\n
- *without the need to make many code\n
- *For this part better check the documentation to understand the nesting of parameters.\n
- *  
- *@todo make a Execute function to run anything with parameter.
+/*
+ * ! \brief Connector and basic operation from PHP to CRM using NTLM and curl.
+ *
+ * This connector load from a simple login/password/url (/web) \n
+ * it has the update/create/retrieve functionnality\n
+ * AND RetrieveMultiple based on FetchXML wich allow to make some powerfull request\n
+ * without the need to make many code\n
+ * For this part better check the documentation to understand the nesting of parameters.\n
+ *
+ * @todo make a Execute function to run anything with parameter.
  */
 class DynamicsCrm {
 	var $serv_adress;
@@ -71,26 +72,32 @@ class DynamicsCrm {
 	/**
 	 * Constructor
 	 *
-	 * @param string $serv_adress Url to service
-	 * @param string $user Dynamics CRM connection's User <p>
-	 * (LDAP) Domain/user </p>
-	 * @param string $password Dynamics CRM connection's password 
+	 * @param string $serv_adress
+	 *        	Url to service
+	 * @param string $user
+	 *        	Dynamics CRM connection's User <p>
+	 *        	(LDAP) Domain/user </p>
+	 * @param string $password
+	 *        	Dynamics CRM connection's password
 	 */
 	function __construct($serv_adress, $user, $password) {
-		$this->setServAdress($serv_adress);
-		$this->setUser($user);
-		$this->setPassword($password);
+		$this->setServAdress ( $serv_adress );
+		$this->setUser ( $user );
+		$this->setPassword ( $password );
 	}
 	
 	/**
-	 * @return  Dynamics CRM connection's Url to service
+	 *
+	 * @return Dynamics CRM connection's Url to service
 	 */
 	public function getServAdress() {
 		return $this->serv_adress;
 	}
 	
 	/**
-	 * @param string $serv_adress Dynamics CRM connection's Url to service
+	 *
+	 * @param string $serv_adress
+	 *        	Dynamics CRM connection's Url to service
 	 */
 	public function setServAdress($serv_adress) {
 		$this->serv_adress = $serv_adress;
@@ -98,15 +105,18 @@ class DynamicsCrm {
 	}
 	
 	/**
-	 * @return  Dynamics CRM connection's user
-	 */	
+	 *
+	 * @return Dynamics CRM connection's user
+	 */
 	public function getUser() {
 		return $this->user;
 	}
 	
 	/**
-	 * @param  string $user Dynamics CRM connection's User <p>
-	 * (LDAP) Domain/user </p>
+	 *
+	 * @param string $user
+	 *        	Dynamics CRM connection's User <p>
+	 *        	(LDAP) Domain/user </p>
 	 */
 	public function setUser($user) {
 		$this->user = $user;
@@ -114,14 +124,17 @@ class DynamicsCrm {
 	}
 	
 	/**
-	* @return Dynamics CRM connection's password
-	*/
+	 *
+	 * @return Dynamics CRM connection's password
+	 */
 	public function getPassword() {
 		return $this->password;
 	}
 	
 	/**
-	 * @param string $password Dynamics CRM connection's password 
+	 *
+	 * @param string $password
+	 *        	Dynamics CRM connection's password
 	 */
 	public function setPassword($password) {
 		$this->password = $password;
@@ -132,16 +145,19 @@ class DynamicsCrm {
 	 * Retrieve ONE and ONLY ONE Line in CRM By ID
 	 *
 	 * @see DynamicsCrm::FormatFilter() For a better understanding of where clause
-	 * @param string $Id  mostly a GUID from the id column (key)      	
-	 * @param string $Table Table name
-	 * @param array $Columns list of columns to be shown , false to see all <p>
-	 * 				array ('col1','col2',...)
+	 * @param string $Id
+	 *        	mostly a GUID from the id column (key)
+	 * @param string $Table
+	 *        	Table name
+	 * @param array $Columns
+	 *        	list of columns to be shown , false to see all <p>
+	 *        	array ('col1','col2',...)
 	 * @return Object CrmResponse
-	 **        Bool $Error,\n
-	 **        String $ErrorCode,\n
-	 **        String $ErrorMessage,\n
-	 **        $Result => false or std object with key parameter\n
-	 *</p>
+	 *         * Bool $Error,\n
+	 *         * String $ErrorCode,\n
+	 *         * String $ErrorMessage,\n
+	 *         * $Result => false or std object with key parameter\n
+	 *         </p>
 	 */
 	function Retrieve($Table, $Id, $Columns) {
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:con="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:arr="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
@@ -153,6 +169,7 @@ class DynamicsCrm {
 		$SoapEnvelope .= '</ser:Retrieve>
 						   </soap:Body>
 						</soap:Envelope>';
+		
 		$Result = $this->call ( "Retrieve", $SoapEnvelope );
 		Return $Result;
 	}
@@ -161,39 +178,45 @@ class DynamicsCrm {
 	 * Retrieve Multiple Lines in CRM
 	 *
 	 * @see FormatFilter For a better understanding of where clause
-	 * 
-	 * @param array $Where    [detail of $Where attribute](@ref FormatFetchFilter) 
-	  @param array $Columns [detail of $Columns attribute](@ref FormatFetchAttribute) 
-	 * 
-	 * @param array $Order will change order of results
+	 *     
+	 * @param array $Where
+	 *        	[detail of $Where attribute](@ref FormatFetchFilter)
+	 * @param array $Columns
+	 *        	[detail of $Columns attribute](@ref FormatFetchAttribute)
+	 *        	
+	 * @param array $Order
+	 *        	will change order of results
 	 *        	<p>
-     *    array(\n
-	 *     1=>('Column'=> 'Colname','Order'=>'Asc'),\n
-	 *     2=>('Column'=> 'Colname2','Order'=>'Desc'),\n
-	 *     ...);\n\n
+	 *        	array(\n
+	 *        	1=>('Column'=> 'Colname','Order'=>'Asc'),\n
+	 *        	2=>('Column'=> 'Colname2','Order'=>'Desc'),\n
+	 *        	...);\n\n
 	 *        	</p>
 	 * @return object CrmResponse.
- 	 **        Bool $Error,\n
-	 **        String $ErrorCode,\n
-	 **        String $ErrorMessage,\n
-	 **        $Result => false or array of std object with key parameter,\n
-	 *</p>
+	 *         * Bool $Error,\n
+	 *         * String $ErrorCode,\n
+	 *         * String $ErrorMessage,\n
+	 *         * $Result => false or array of std object with key parameter,\n
+	 *         </p>
 	 */
-	public function RetrieveMultiple($Table, $Where, $Columns, $Join=false ,$Order = false) {
-		if(is_array($Columns))$Aggregate=($this->array_key_exists_r('aggregate', $Columns))?'true':'false';
-		else $Aggregate='false';
-		
+	public function RetrieveMultiple($Table, $Where, $Columns, $Join = false, $Order = false) {
+		if (is_array ( $Columns )) {
+			if ($this->array_key_exists_r('aggregate', $Columns) || $this->array_key_exists_r('groupby', $Columns)){
+				$Aggregate = 'true';
+		}else $Aggregate = 'false';
+		}else  $Aggregate = 'false';
 		$SoapEnvelope = '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 				 			 <s:Body>
 				    			<RetrieveMultiple xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
 				      				<query i:type="a:FetchExpression" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts">
 				       					 <a:Query>
-												&lt;fetch version=\'1.0\' output-format=\'xml-platform\' mapping=\'logical\' aggregate=\''.$Aggregate.'\' distinct=\'false\'&gt;';
+												&lt;fetch version=\'1.0\' output-format=\'xml-platform\' mapping=\'logical\' aggregate=\'' . $Aggregate . '\' distinct=\'false\'&gt;';
 		$SoapEnvelope .= $this->FormatFetchEntity ( $Table );
 		$SoapEnvelope .= $this->FormatFetchAttribute ( $Columns );
 		$SoapEnvelope .= $this->FormatFetchOrder ( $Order );
 		$SoapEnvelope .= $this->formatFetchFilter ( $Where );
-		if ($Join!==false) $SoapEnvelope .= $this->formatFetchJoin($Join);
+		if ($Join !== false)
+			$SoapEnvelope .= $this->formatFetchJoin ( $Join );
 		$SoapEnvelope .= '&lt;/entity&gt;
 				                               &lt;/fetch&gt;
 				</a:Query>
@@ -209,17 +232,19 @@ class DynamicsCrm {
 	/**
 	 * Delete a row
 	 *
-	 * @param string $Table <p>
+	 * @param string $Table
+	 *        	<p>
 	 *        	the table where you want to delete a row
 	 *        	</p>
-	 * @param string $Id  mostly a GUID from the id column (key)     
+	 * @param string $Id
+	 *        	mostly a GUID from the id column (key)
 	 *        	...
-	 * @return  obj CrmResponse. <p>
-	  **        Bool $Error,\n
-	 **        String $ErrorCode,\n
-	 **        String $ErrorMessage,\n
-	 **        $Result => Guid or false depending if query worked or not,\n
-	 *</p>
+	 * @return obj CrmResponse. <p>
+	 *         * Bool $Error,\n
+	 *         * String $ErrorCode,\n
+	 *         * String $ErrorMessage,\n
+	 *         * $Result => Guid or false depending if query worked or not,\n
+	 *         </p>
 	 */
 	public function Delete($Table, $Id) {
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
@@ -238,22 +263,25 @@ class DynamicsCrm {
 	/**
 	 * Update a row in CRM
 	 *
-	 * @param string $Table <p>
+	 * @param string $Table
+	 *        	<p>
 	 *        	the table name where you want to insert a row
 	 *        	</p>
-	 * @param string $Id  mostly a GUID from the id column (key)     
+	 * @param string $Id
+	 *        	mostly a GUID from the id column (key)
 	 * @link http://msdn.microsoft.com/en-us/library/microsoft.xrm.sdk.query.conditionoperator.aspx
 	 *       too see the dif operator
 	 *       </p>
-	 * @param array $Params <p>
+	 * @param array $Params
+	 *        	<p>
 	 *        	'ColumnName' => Value
 	 *        	</p>
 	 * @return obj CrmResponse. <p>
-	 **        Bool $Error,\n
-	 **        String $ErrorCode,\n
-	 **        String $ErrorMessage,\n
-	 **        $Result => true or false...\n
-	 *</p>
+	 *         * Bool $Error,\n
+	 *         * String $ErrorCode,\n
+	 *         * String $ErrorMessage,\n
+	 *         * $Result => true or false...\n
+	 *         </p>
 	 */
 	function Update($Table, $Params, $Id) {
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
@@ -276,35 +304,36 @@ class DynamicsCrm {
 	/**
 	 * Create a new row
 	 *
-	 * @param string $Table <p>
+	 * @param string $Table
+	 *        	<p>
 	 *        	the table where you want to create a new row
 	 *        	</p>
-	 * @param array $Params <p>
-	 * 
-	 **   array(\n
-	 *   *    1=>array( \n
-	 *        *        'field'=>'fieldname',\n
-	 *        *        'type'=>'Field type',\n
-	 *        *        'value'=>'value'\n
-	 *   *    ) ,\n
-	 *   *    2=>array( \n
-	 *        *        'field'=>'fieldname',\n
-	 *        *        'type'=>'EntityReference',\n
-	 *        *        'id'=>'guidforentity',\n
-	 *        *        'name'=>'entityname(table)'\n
-	 *   *    ) , \n       	
-	 **)\n
-	 * 
-	 * </p>
+	 * @param array $Params
+	 *        	<p>
+	 *        	
+	 *        	* array(\n
+	 *        	* 1=>array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'Field type',\n
+	 *        	* 'value'=>'value'\n
+	 *        	* ) ,\n
+	 *        	* 2=>array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'EntityReference',\n
+	 *        	* 'id'=>'guidforentity',\n
+	 *        	* 'name'=>'entityname(table)'\n
+	 *        	* ) , \n
+	 *        	*)\n
+	 *        	
+	 *        	</p>
 	 * @return objet CrmResponse. <p>
-	 **        Bool $Error,\n
-	 **        String $ErrorCode,\n
-	 **        String $ErrorMessage,\n
-	 **        $Result => Guid or false depending if query worked or not,\n
-	 *</p>
+	 *         * Bool $Error,\n
+	 *         * String $ErrorCode,\n
+	 *         * String $ErrorMessage,\n
+	 *         * $Result => Guid or false depending if query worked or not,\n
+	 *         </p>
 	 */
 	public function Create($Table, $Params) {
-		
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 							<soap:Body>
 				<Create xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
@@ -322,7 +351,6 @@ class DynamicsCrm {
         </soap:Envelope>';
 		return $this->call ( 'Create', $SoapEnvelope );
 	}
-	
 	
 	/*
 	 * Not Working ATM to be checked
@@ -346,12 +374,13 @@ class DynamicsCrm {
 	/**
 	 * Format Entity Header
 	 *
-	 * @param string $operation Name of the action to be done
-	 * @param string $soapBody Soap body request according to the Action      	
+	 * @param string $operation
+	 *        	Name of the action to be done
+	 * @param string $soapBody
+	 *        	Soap body request according to the Action
 	 * @return result parsed and in an CrmResponse Object according to action
 	 */
 	private function call($operation, $soapBody) {
-		
 		$headers = $this->generateSoapHeader ( $operation );
 		
 		$ch = curl_init ();
@@ -364,6 +393,7 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_USERPWD, $this->user . ':' . $this->password );
 		
 		$response = curl_exec ( $ch );
+		die(print_r($response));
 		$Return = new CrmResponse ();
 		if (curl_exec ( $ch ) === false) {
 			$Return->Error = True;
@@ -395,23 +425,23 @@ class DynamicsCrm {
 						Break;
 					case 'Create' :
 						$Return->NbResult = 1;
-						$Return->Result = ( string )  $xml->Body->CreateResponse->CreateResult;
+						$Return->Result = ( string ) $xml->Body->CreateResponse->CreateResult;
 						Break;
 					case 'Update' :
-						if(isset($xml->Body->UpdateResponse)){
+						if (isset ( $xml->Body->UpdateResponse )) {
 							$Return->NbResult = 1;
 							$Return->Result = true;
-						}else{
+						} else {
 							$Return->Error = True;
 							$Return->ErrorCode = "Unknown Error";
 							$Return->ErrorMessage = "Unknown Error";
 						}
 						Break;
 					case 'Delete' :
-						if(isset($xml->Body->DeleteResponse)){
+						if (isset ( $xml->Body->DeleteResponse )) {
 							$Return->NbResult = 1;
 							$Return->Result = true;
-						}else{
+						} else {
 							$Return->Error = True;
 							$Return->ErrorCode = "Unknown Error";
 							$Return->ErrorMessage = "Unknown Error";
@@ -438,57 +468,58 @@ class DynamicsCrm {
 	 * Format Fetch Attributes <p>
 	 * (Column being resolved by RetrieveMultiple)
 	 *
-	 * @param array $Columns <p>
-	 **    simple request\n
-	 *   *    array(\n
-	 *       *    'Colname1',\n
-	 *       *    'Colname2'...\n
-	 *   *    )\n\n
-	 *        
-	 **aggregate request \n
-	 *   *    array(\n
-	 *       *    '1'=>array(\n
-	 *           *    'name'=>'colname',\n
-	 *           *    'alias'=>	'alias',(false,notset => will keep colname as alias)\n
-	 *           *    'aggregate' =>'aggregate function name' ,if aggregate function needed else false or unset (avg , max, min, sum, count => SQL : (COUNT(*)) ,countcolumn => SQL :  (COUNT(name)) ,countdistinct => SQL :  (COUNT(DISTINCT name))  )\n	
-	 *       *    ),\n  
-	 *       *    '2'=> array(\n
-	 *           *    'name'=>'colname',\n
-	 *           *    'alias'=>	'alias',(false,notset => will keep colname as alias)\n
-	 *           *    'groupby' =>true or year,quarter,month,week,day for date grouping\n
-	 *       *    )\n
-	 *   *    )   \n\n  
-	 * note that you cant mix simple column with agregates
+	 * @param array $Columns
+	 *        	<p>
+	 *        	* simple request\n
+	 *        	* array(\n
+	 *        	* 'Colname1',\n
+	 *        	* 'Colname2'...\n
+	 *        	* )\n\n
+	 *        	
+	 *        	*aggregate request \n
+	 *        	* array(\n
+	 *        	* '1'=>array(\n
+	 *        	* 'name'=>'colname',\n
+	 *        	* 'alias'=>	'alias',(false,notset => will keep colname as alias)\n
+	 *        	* 'aggregate' =>'aggregate function name' ,if aggregate function needed else false or unset (avg , max, min, sum, count => SQL : (COUNT(*)) ,countcolumn => SQL : (COUNT(name)) ,countdistinct => SQL : (COUNT(DISTINCT name)) )\n
+	 *        	* ),\n
+	 *        	* '2'=> array(\n
+	 *        	* 'name'=>'colname',\n
+	 *        	* 'alias'=>	'alias',(false,notset => will keep colname as alias)\n
+	 *        	* 'groupby' =>true or year,quarter,month,week,day for date grouping\n
+	 *        	* )\n
+	 *        	* ) \n\n
+	 *        	note that you cant mix simple column with agregates
 	 * @return correct XML for Columns
 	 */
 	private function FormatFetchAttribute($Columns) {
 		$Attributes = "";
 		if (is_array ( $Columns )) {
 			foreach ( $Columns as $column ) {
-				//aggregate cases
-				if (isset($column['name'])){
-					if (empty($column['alias'])){
-						$column['alias']=$column['name'];
+				// aggregate cases
+				if (isset ( $column ['name'] )) {
+					if (empty ( $column ['alias'] )) {
+						$column ['alias'] = $column ['name'];
 					}
-					//basic aggregate function avg , max, min, sum, count (COUNT(*)) ,countcolumn (COUNT(name)) ,countdistinct (COUNT(DISTINCT name)) 
-					if (!empty($column['aggregate'])){
-						if ($column['aggregate']=='countdistinct'){
-							$Attributes .= "&lt;attribute name='".$column['name']."' alias='".$column['alias']."' aggregate='countcolumn' distinct='true' /&gt;";
-						}else {
-							$Attributes .= "&lt;attribute name='".$column['name']."' alias='".$column['alias']."' aggregate='".$column['aggregate']."' /&gt;";
+					// basic aggregate function avg , max, min, sum, count (COUNT(*)) ,countcolumn (COUNT(name)) ,countdistinct (COUNT(DISTINCT name))
+					if (! empty ( $column ['aggregate'] )) {
+						if ($column ['aggregate'] == 'countdistinct') {
+							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' aggregate='countcolumn' distinct='true' /&gt;";
+						} else {
+							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' aggregate='" . $column ['aggregate'] . "' /&gt;";
 						}
-					//so is that a groupby?
-					}else if (isset($column['groupby'])) {
+						// so is that a groupby?
+					} else if (isset ( $column ['groupby'] )) {
 						
-					 if($column['groupby']!==true){
-						$Attributes .= "&lt;attribute name='".$column['name']."' alias='".$column['alias']."' dategrouping='".$column['groupby']."' groupby='true' /&gt;";
-						}else{
-						$Attributes .= "&lt;attribute name='".$column['name']."' alias='".$column['alias']."' groupby='true' /&gt;";
-							
+						if ($column ['groupby'] !== true) {
+							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' dategrouping='" . $column ['groupby'] . "' groupby='true' /&gt;";
+						} else {
+							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' groupby='true' /&gt;";
 						}
-					 }
-				//normal cases	
-				}else $Attributes .= "&lt;attribute name='" . $column . "' /&gt;";
+					}
+					// normal cases
+				} else
+					$Attributes .= "&lt;attribute name='" . $column . "' /&gt;";
 			}
 		}
 		return $Attributes;
@@ -497,27 +528,28 @@ class DynamicsCrm {
 	/**
 	 * Format Attributes for insert and updates<p>
 	 *
-	 * @param $Params Attributes parameter <p>
-	 * 
-	 **   array(\n
-	 *   *    1=>array( \n
-	 *        *        'field'=>'fieldname',\n
-	 *        *        'type'=>'Field type',\n
-	 *        *        'value'=>'value'\n
-	 *   *    ) ,\n
-	 *   *    2=>array( \n
-	 *        *        'field'=>'fieldname',\n
-	 *        *        'type'=>'EntityReference',\n
-	 *        *        'id'=>'guidforentity',\n
-	 *        *        'name'=>'entityname(table)'\n
-	 *   *    ) , \n       	
-	 **)\n
-	 * 
+	 * @param $Params Attributes
+	 *        	parameter <p>
+	 *        	
+	 *        	* array(\n
+	 *        	* 1=>array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'Field type',\n
+	 *        	* 'value'=>'value'\n
+	 *        	* ) ,\n
+	 *        	* 2=>array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'EntityReference',\n
+	 *        	* 'id'=>'guidforentity',\n
+	 *        	* 'name'=>'entityname(table)'\n
+	 *        	* ) , \n
+	 *        	*)\n
+	 *        	
 	 * @return correct Attributes XML for insert/update cases
 	 */
 	private function FormatAttribute($Params) {
 		$TxtAttribute = "";
-
+		
 		if (is_array ( $Params )) {
 			
 			foreach ( $Params as $Param ) {
@@ -578,52 +610,52 @@ class DynamicsCrm {
 	/**
 	 * Format Columns for REtrieveMultiple<p>
 	 *
-	 * @param array $Columns array with colnames or false for all col\n <p>
-	 **    array(\n
-	 *    *    'colname1',\n
-	 *    *    'colname2'...\n
-	 **    )\n
-	 * notice it will always return GUID Except with agregate function</p>
+	 * @param array $Columns
+	 *        	array with colnames or false for all col\n <p>
+	 *        	* array(\n
+	 *        	* 'colname1',\n
+	 *        	* 'colname2'...\n
+	 *        	* )\n
+	 *        	notice it will always return GUID Except with agregate function</p>
 	 * @return correct Columns XML for REtrieveMultiple
 	 */
 	private function FormatColumn($Columns) {
 		$AllCol = ($Columns == false) ? "true" : "false";
-		
-		$TxtColumn = '<ser:columnSet> <con:AllColumns>' . $AllCol . '</con:AllColumns>';
+		$TxtColumn = '<ser:columnSet><con:AllColumns>' . $AllCol . '</con:AllColumns><con:Columns>';
 		if ($Columns != false) {
 			foreach ( $Columns as $Column ) {
 				$TxtColumn .= '<arr:string>' . $Column . '</arr:string>';
 			}
 		}
-		$TxtColumn .= '</ser:columnSet>';
+		$TxtColumn .= '</con:Columns></ser:columnSet>';
 		return $TxtColumn;
 	}
 	
 	/**
 	 * Format Order by for the request
 	 *
-	 * @param array $Order Clause order by
-	 **    array(\n
-	 *    *    1=>array(\n
-	 *        *    'Column'=> 'ColumName',\n
-	 *        *    'Order'=>'Asc'\n
-	 *    *    ),\n
-	 *    *    2=>array(\n
-	 *        *    'Column'=> 'ColumName2',\n
-	 *        *    'Order'=>'Desc'\n
-	 *    *    )..\n
-	 **    )\n
+	 * @param array $Order
+	 *        	Clause order by
+	 *        	* array(\n
+	 *        	* 1=>array(\n
+	 *        	* 'Column'=> 'ColumName',\n
+	 *        	* 'Order'=>'Asc'\n
+	 *        	* ),\n
+	 *        	* 2=>array(\n
+	 *        	* 'Column'=> 'ColumName2',\n
+	 *        	* 'Order'=>'Desc'\n
+	 *        	* )..\n
+	 *        	* )\n
 	 * @return correct XML for this Order by
 	 */
 	private function FormatFetchOrder($Orders) {
 		$TxtOrder = "";
 		if (is_array ( $Orders )) {
-			foreach($Orders as $Order ){
-			$TxtOrder .= "&lt;order attribute='" . $Order ['Column'] . "' descending='";
-			$TxtOrder .= ($Order ['Order'] == 'Asc') ? "false" : "true";
-			$TxtOrder .= "' /&gt;";
+			foreach ( $Orders as $Order ) {
+				$TxtOrder .= "&lt;order attribute='" . $Order ['Column'] . "' descending='";
+				$TxtOrder .= ($Order ['Order'] == 'Asc') ? "false" : "true";
+				$TxtOrder .= "' /&gt;";
 			}
-			
 		}
 		return $TxtOrder;
 	}
@@ -633,40 +665,41 @@ class DynamicsCrm {
 	 * will return a Filter is Type is set
 	 * else will retun a condition
 	 *
-	 * @param array $Filter <p>
-	 *- basic and req  where condition1 and condition2\n\n
-	 * 	array(\n
-	 *    *		Condition1=>array\n
-	 *    *		Condition2=>array\n
-	 *			)\n
-	 *- basic or req  where condition1 or condition2\n\n
-	 * 			array(\n
-	 *    * 		'Type'=>'or'\n
-	 *    *			Condition1=>array\n
-	 *    *			Condition2=>array\n
-	 * 				)\n
-	 *- multiple occurence and/or can be tricky\n
-	 *  where ((condition1 and condition2) or ((condition5 and condition6)or condition4))\n\n
-	 *  
-	 **   array (\n
-	 *   *    Type=>'or'\n
-	 *   *    1=>array(\n
-	 *        *        'Type'=>'and'\n
-	 *        *        Condition1=>array\n
-	 *        *       Condition2=>array\n
-	 *        *       )\n
-	 *   *    2=>array(\n
-	 *        *        'Type'=>'or'\n
-	 *        *         Condition3=>array(\n
-	 *            *                       'Type'=>'and'\n
-	 *            *                        Condition5=>array\n
-	 *            *                        Condition6=>array\n
-	 *            *                       )\n
-	 *        *         Condition4=>array\n
-	 *        *    	)\n
-	 **    )\n
-	 * [Check FormatCondition for more information about each operator](@ref FormatCondition) 
-	 *        
+	 * @param array $Filter
+	 *        	<p>
+	 *        	- basic and req where condition1 and condition2\n\n
+	 *        	array(\n
+	 *        	*		Condition1=>array\n
+	 *        	*		Condition2=>array\n
+	 *        	)\n
+	 *        	- basic or req where condition1 or condition2\n\n
+	 *        	array(\n
+	 *        	* 'Type'=>'or'\n
+	 *        	*			Condition1=>array\n
+	 *        	*			Condition2=>array\n
+	 *        	)\n
+	 *        	- multiple occurence and/or can be tricky\n
+	 *        	where ((condition1 and condition2) or ((condition5 and condition6)or condition4))\n\n
+	 *        	
+	 *        	* array (\n
+	 *        	* Type=>'or'\n
+	 *        	* 1=>array(\n
+	 *        	* 'Type'=>'and'\n
+	 *        	* Condition1=>array\n
+	 *        	* Condition2=>array\n
+	 *        	* )\n
+	 *        	* 2=>array(\n
+	 *        	* 'Type'=>'or'\n
+	 *        	* Condition3=>array(\n
+	 *        	* 'Type'=>'and'\n
+	 *        	* Condition5=>array\n
+	 *        	* Condition6=>array\n
+	 *        	* )\n
+	 *        	* Condition4=>array\n
+	 *        	* )\n
+	 *        	* )\n
+	 *        	[Check FormatCondition for more information about each operator](@ref FormatCondition)
+	 *        	
 	 * @return correct XML for thoose filters
 	 */
 	private function FormatFetchFilter($Filters) {
@@ -693,47 +726,49 @@ class DynamicsCrm {
 		return $TxtFilter;
 	}
 	
-	
-	
 	/**
 	 * Format Join for RetriveMultiple
 	 *
-	 * @param array $Joins <p>
-	 **    array(   \n
-	 *   *    1=>array(	\n
-	 *        *    	'name' => (String) tablename\n
-	 *        *    	'from' => join name On 'from'=to \n
-	 *        *    	'to' => join name On from='to' \n
-	 *        *    	'alias' =>not necessary can be false but aliases will be used when you try to get back ur data meaning $result->alias.data\n
-	 *        *    	'type' => Operator\n
-	 *        *    	'colums' => array [see FormatColumn for detail](@ref FormatColumn)  \n
-	 *        *    	'where' => array [see FormatFetchFilter for detail](@ref FormatFetchFilter) \n
-	 *        *    	'nested'=> (reproduce the same pattern and will nest a join false or unset if not required)\n
-	 *   *    ),\n
-	 *   *    2=>array('name'=>...)\n
-	 **    )\n
-	 *        if only one join is required u can go directly with no nested array 
-	 *        
-	 *        
+	 * @param array $Joins
+	 *        	<p>
+	 *        	* array( \n
+	 *        	* 1=>array(	\n
+	 *        	* 'name' => (String) tablename\n
+	 *        	* 'from' => join name On 'from'=to \n
+	 *        	* 'to' => join name On from='to' \n
+	 *        	* 'alias' =>not necessary can be false but aliases will be used when you try to get back ur data meaning $result->alias.data\n
+	 *        	* 'type' => Operator\n
+	 *        	* 'colums' => array [see FormatColumn for detail](@ref FormatColumn) \n
+	 *        	* 'where' => array [see FormatFetchFilter for detail](@ref FormatFetchFilter) \n
+	 *        	* 'nested'=> (reproduce the same pattern and will nest a join false or unset if not required)\n
+	 *        	* ),\n
+	 *        	* 2=>array('name'=>...)\n
+	 *        	* )\n
+	 *        	if only one join is required u can go directly with no nested array
+	 *        	
+	 *        	
 	 *        	</p>
 	 * @return correct XML for request this condition
 	 */
 	private function formatFetchJoin($Joins) {
-		//so we dont have to make a special statement for only 1 join
-		$TxtJoin="";
-		if (isset($Joins['name'])){
-			$Joins=array('1'=>$Joins);
+		// so we dont have to make a special statement for only 1 join
+		$TxtJoin = "";
+		if (isset ( $Joins ['name'] )) {
+			$Joins = array (
+					'1' => $Joins 
+			);
 		}
-		foreach ($Joins as $Join){
+		foreach ( $Joins as $Join ) {
 			
-			$TxtJoin.="&lt;link-entity name='".$Join['name']."' from='".$Join['from']."' to='".$Join['to']."' ";
-			if (!empty($Join['alias']) ) $TxtJoin.=" alias='".$Join['alias']."' ";
-			$TxtJoin.=" link-type='".$Join['type']."' &gt;";
-			$TxtJoin.= $this->FormatFetchAttribute ( $Join['columns'] );
-			if (!empty($Join['nested'])) $TxtJoin.=formatFetchJoin($Join);
-			$TxtJoin .= $this->formatFetchFilter ( $Join['where'] );
-			$TxtJoin.="&lt;/link-entity&gt;";
-			
+			$TxtJoin .= "&lt;link-entity name='" . $Join ['name'] . "' from='" . $Join ['from'] . "' to='" . $Join ['to'] . "' ";
+			if (! empty ( $Join ['alias'] ))
+				$TxtJoin .= " alias='" . $Join ['alias'] . "' ";
+			$TxtJoin .= " link-type='" . $Join ['type'] . "' &gt;";
+			$TxtJoin .= $this->FormatFetchAttribute ( $Join ['columns'] );
+			if (! empty ( $Join ['nested'] ))
+				$TxtJoin .= formatFetchJoin ( $Join );
+			$TxtJoin .= $this->formatFetchFilter ( $Join ['where'] );
+			$TxtJoin .= "&lt;/link-entity&gt;";
 		}
 		return $TxtJoin;
 	}
@@ -742,12 +777,12 @@ class DynamicsCrm {
 	 * Format condition Depending on Operator
 	 *
 	 * @param array $Filter<p>
-	 **array(\n
-	 *    *'Column' => (String) $ColumnName\n
-     *    *'Op' => Operator [link to all operator](http://msdynamicscrmblog.wordpress.com/2013/05/10/fetch-xml-and-conditionexpression-operators-using-c-in-dynamics-crm-2011/)\n   
-	 *    *'Value' => $Value (if necessary depending on operator, data or could be an array)\n
-	 *    *'Value2' => $Value2 (if necessary mostly in between case)\n
-     **)
+	 *        	*array(\n
+	 *        	*'Column' => (String) $ColumnName\n
+	 *        	*'Op' => Operator [link to all operator](http://msdynamicscrmblog.wordpress.com/2013/05/10/fetch-xml-and-conditionexpression-operators-using-c-in-dynamics-crm-2011/)\n
+	 *        	*'Value' => $Value (if necessary depending on operator, data or could be an array)\n
+	 *        	*'Value2' => $Value2 (if necessary mostly in between case)\n
+	 *        	*)
 	 *        	</p>
 	 * @return correct XML for request this condition
 	 */
@@ -758,9 +793,9 @@ class DynamicsCrm {
 			 * so no need for value here
 			 */
 			case 'eq-userid' :
-			case 'ne-userid' :				
+			case 'ne-userid' :
 			case 'eq-bysinessid' :
-			case 'ne-bysinessid' :				
+			case 'ne-bysinessid' :
 			case 'eq-userteams' :
 			case 'last-seven-days' :
 			case 'last-fiscal-period' :
@@ -787,9 +822,9 @@ class DynamicsCrm {
 				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' /&gt;";
 				break;
 			/*
-			* The basic operators
-			* Value to be set, nothing much
-			*/
+			 * The basic operators
+			 * Value to be set, nothing much
+			 */
 			case 'like' :
 			case 'not-like' :
 			case 'eq' :
@@ -822,28 +857,30 @@ class DynamicsCrm {
 				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' value='" . $Filter ['Value'] . "'  /&gt;";
 				break;
 			/*
-			* The in operators
-			* Value is now an array with data to be tested array('1','2',...)
-			*/
+			 * The in operators
+			 * Value is now an array with data to be tested array('1','2',...)
+			 */
 			case 'not-in' :
 			case 'in' :
 				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' &gt;";
-				foreach ($Filter ['Value'] as $Value){
-				$Condition .= '&lt;value&gt;' . $Value . '&lt;/value&gt;';
+				foreach ( $Filter ['Value'] as $Value ) {
+					$Condition .= '&lt;value&gt;' . $Value . '&lt;/value&gt;';
 				}
 				$Condition .= '&lt;/condition &gt;';
 				break;
 			/*
 			 * The 2 values operator
 			 * Value and Value2 in array
-			 */	
+			 */
 			case 'between' :
 			case 'not-between' :
 			case 'in-fiscal-period-and-year' :
 			case 'in-or-after-fiscal-period-and-year' :
 			case 'in-or-before-fiscal-period-and-year' :
 				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' &gt;";
-				$Condition .= '&lt;value&gt;' . $Filter ['Value'] . '&lt;/value&gt; &lt;value&gt;'.['Value2'].'&lt;/value&gt;';
+				$Condition .= '&lt;value&gt;' . $Filter ['Value'] . '&lt;/value&gt; &lt;value&gt;' . [ 
+						'Value2' 
+				] . '&lt;/value&gt;';
 				$Condition .= '&lt;/condition &gt;';
 				break;
 		}
@@ -854,8 +891,10 @@ class DynamicsCrm {
 	/**
 	 * Parse the result of a RetrieveMultiple Query
 	 *
-	 * @param $xml SimpleXml to be parsed
-	 * @param  Object CrmResponse
+	 * @param $xml SimpleXml
+	 *        	to be parsed
+	 * @param
+	 *        	Object CrmResponse
 	 * @return Object CrmResponse
 	 */
 	private function ParseRetrieveMultiple($xml, $Return) {
@@ -867,8 +906,10 @@ class DynamicsCrm {
 	/**
 	 * Parse the datas and update the object accordingly
 	 *
-	 * @param $xml SimpleXml to be parsed
-	 * @param  Object CrmResponse
+	 * @param $xml SimpleXml
+	 *        	to be parsed
+	 * @param
+	 *        	Object CrmResponse
 	 * @return Object CrmResponse
 	 */
 	private function ParseDatas($Datas, $Return) {
@@ -888,16 +929,19 @@ class DynamicsCrm {
 	 * Parse the result of a ResultLine
 	 * (will be used for both Retrieve and RetrieveMultiple)
 	 *
-	 * @param $Data SimpleXml Entity to be parsed
+	 * @param $Data SimpleXml
+	 *        	Entity to be parsed
 	 * @return stdClass with correct Key/value for the resul line
 	 */
 	private function ParseResultLine($Data) {
 		$ResultLine = new \stdClass ();
 		foreach ( $Data->Attributes as $keypair ) {
 			foreach ( $keypair->KeyValuePairOfstringanyType as $data ) {
-				$key = $data->key;
-				if(isset($data->value->Value))$value = ( string ) $data->value->Value;
-				else $value = ( string ) $data->value;
+				$key = str_ireplace('.','_', $data->key);
+				if (isset ( $data->value->Value ))
+					$value = ( string ) $data->value->Value;
+				else
+					$value = ( string ) $data->value;
 				if (ctype_digit ( $value )) {
 					$ResultLine->$key = ( int ) $value;
 				} else if (is_float ( $value )) {
@@ -907,7 +951,6 @@ class DynamicsCrm {
 				} else
 					$ResultLine->$key = $value;
 			}
-			
 		}
 		return $ResultLine;
 	}
@@ -915,21 +958,24 @@ class DynamicsCrm {
 	/**
 	 * Parse the result of a Retrieve Query
 	 *
-	 * @param $xml SimpleXml to be parsed
-	 * @param  	Object CrmResponse
+	 * @param $xml SimpleXml
+	 *        	to be parsed
+	 * @param
+	 *        	Object CrmResponse
 	 * @return Object CrmResponse
 	 */
 	private function ParseRetrieve($xml, $Return) {
 		$Datas = $xml->Body->RetrieveResponse->RetrieveResult;
 		$Return = $this->ParseDatas ( $Datas, $Return );
-		$Return->Result=$Return->Result[0];
+		$Return->Result = $Return->Result [0];
 		return $Return;
 	}
 	
 	/**
 	 * Generate Header accordingly to the operation chosen
 	 *
-	 * @param string $operation Operation name (wdsl wise)
+	 * @param string $operation
+	 *        	Operation name (wdsl wise)
 	 * @return array formated Header
 	 */
 	private function generateSoapHeader($operation) {
@@ -945,29 +991,25 @@ class DynamicsCrm {
 		return $headers;
 	}
 	
-	
 	/**
 	 * Recursive array_key_exist
 	 *
-	 *@param $needle what you want to find
-	 *@param $haystack where you want to find it
+	 * @param $needle what
+	 *        	you want to find
+	 * @param $haystack where
+	 *        	you want to find it
 	 * @return boolean
 	 */
-	private function array_key_exists_r($needle, $haystack)
-	{
-		$result = array_key_exists($needle, $haystack);
+	private function array_key_exists_r($needle, $haystack) {
+		$result = array_key_exists ( $needle, $haystack );
 		if ($result)
 			return $result;
-		foreach ($haystack as $v)
-		{
-			if (is_array($v) || is_object($v))
-				$result = $this->array_key_exists_r($needle, $v);
+		foreach ( $haystack as $v ) {
+			if (is_array ( $v ) || is_object ( $v ))
+				$result = $this->array_key_exists_r ( $needle, $v );
 			if ($result)
 				return $result;
 		}
 		return $result;
 	}
-	
-
-	
 }
