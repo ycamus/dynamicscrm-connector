@@ -393,7 +393,6 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_USERPWD, $this->user . ':' . $this->password );
 		
 		$response = curl_exec ( $ch );
-		die(print_r($response));
 		$Return = new CrmResponse ();
 		if (curl_exec ( $ch ) === false) {
 			$Return->Error = True;
