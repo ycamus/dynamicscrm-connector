@@ -65,10 +65,55 @@ use Symfony\Component\HttpFoundation\HeaderBag;
  * @todo make a Execute function to run anything with parameter.
  */
 class DynamicsCrm {
+	// @formatter:off
 	var $serv_adress;
 	var $user;
 	var $password;
-	
+	private $StateCheck=array(
+			'account'=>array('0'=>array('1'),'1'=>array('2')),
+			'activitypointer'=>array('0'=>array('1'),'1'=>array('2'),'2'=>array('3'),'3'=>array('4')),
+			'appointment'=>array('0'=>array('1','2','3','4'),'1'=>array('1','2','3','4'),'2'=>array('1','2','3','4'),'3'=>array('1','2','3','4')),
+			'kbarticle'=>array('1'=>array('1'),'2'=>array('2'),'2'=>array('3')),
+			'campaign'=>array('0'=>array('1','2','3','4','5')),
+			'campaignactivity'=>array('0'=>array('0','0','4','5','6'),'1'=>array('2'),'2'=>array('3')),
+			'campaignresponse'=>array('0'=>array('1'),'1'=>array('2'),'2'=>array('3')),
+			'incident'=>array('0'=>array('1','2','3','4'),'1'=>array('5'),'2'=>array('6')),
+			'incidentresolution'=>array('0'=>array('1'),'1'=>array('2'),'2'=>array('3')),
+			'notcustomizable'=>array('0'=>array('1'),'1'=>array('2'),'2'=>array('3')),
+			'contact'=>array('0'=>array('1'),'1'=>array('2')),
+			'contract'=>array('0'=>array('1'),'1'=>array('2'),'2'=>array('3'),'3'=>array('4'),'4'=>array('5'),'5'=>array('6')),
+			'contractdetail'=>array('0'=>array('1'),'1'=>array('2'),'2'=>array('3'),'3'=>array('4')),
+			'transactioncurrency'=>array('0'=>array('0'),'1'=>array('1')),
+			'discounttype'=>array('0'=>array('100001'),'1'=>array('100002')),
+			'email'=>array('0'=>array('1','8'),'1'=>array('2','3','4','6','7'),'2'=>array('5')),
+			'fax'=>array('0'=>array('1'),'1'=>array('2','3','4'),'2'=>array('5')),
+			'invoice'=>array('0'=>array('1','2','4','5','6'),'1'=>array('3','7'),'2'=>array('100001','100002'),'2'=>array('100003')),
+			'lead'=>array('0'=>array('1','2'),'1'=>array('3'),'2'=>array('4','5','6','7')),
+			'letter'=>array('0'=>array('1','2'),'1'=>array('3','4'),'2'=>array('5')),
+			'list'=>array('0'=>array('0'),'1'=>array('1')),
+			'opportunity'=>array('0'=>array('1','2'),'1'=>array('3'),'2'=>array('4','5')),
+			'salesorder'=>array('0'=>array('1','2'),'1'=>array('3'),'2'=>array('4'),'3'=>array('100001','100002'),'4'=>array('100003')),
+			'phonecall'=>array('0'=>array('1'),'1'=>array('2','4'),'2'=>array('3')),
+			'pricelevel'=>array('0'=>array('100001'),'1'=>array('100002')),
+			'product'=>array('0'=>array('1'),'1'=>array('2')),
+			'quote'=>array('0'=>array('1'),'1'=>array('2','2'),'2'=>array('4','5'),'3'=>array('5','6','7')),
+			'serviceappointment'=>array('0'=>array('1','2'),'1'=>array('8'),'2'=>array('9','10'),'3'=>array('3','4','6','7')),
+			'task'=>array('0'=>array('2','3','4','7'),'1'=>array('5'),'2'=>array('6'))
+	);
+	private $Aggregate = array ('avg','max','min','sum','count','countcolumn','countdistinct');
+	private $Operator= array(
+			'0'=>array('eq-userid','ne-userid','eq-bysinessid','ne-bysinessid',
+					'eq-userteams','last-seven-days','last-fiscal-period','last-fiscal-year','last-month',
+					'last-week','last-year','next-seven-days','next-fiscal-period','next-fiscal-year','next-month','next-week',
+					'next-year','null','this-fiscal-period','this-fiscal-year','this-month','this-week','this-year','today','not-null','tomorrow','yesterday') ,
+			'1'=>array('like','not-like','eq','ge','gt','le','lt','ne','on','on-or-after','on-or-before',
+					'in-fiscal-period','in-fiscal-year','last-x-days','last-x-fiscal-periods','last-x-fiscal-years','last-x-hours',
+					'last-x-months','last-x-weeks','last-x-years','next-x-days','next-x-fiscal-periods','next-x-fiscal-years',
+					'next-x-hours','next-x-months','next-x-weeks','next-x-years','olderthan-x-months') ,
+			'2'=> array('not-in','in'),
+			'3'=> array('between','not-between','in-fiscal-period-and-year','in-or-after-fiscal-period-and-year','in-or-before-fiscal-period-and-year')
+	);
+
 	/**
 	 * Constructor
 	 *
@@ -160,6 +205,8 @@ class DynamicsCrm {
 	 *         </p>
 	 */
 	function Retrieve($Table, $Id, $Columns) {
+		
+		// build Saop Enveloppe
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:con="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:arr="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
   						 <soap:Body>
       						<ser:Retrieve>
@@ -170,8 +217,8 @@ class DynamicsCrm {
 						   </soap:Body>
 						</soap:Envelope>';
 		
-		$Result = $this->call ( "Retrieve", $SoapEnvelope );
-		Return $Result;
+		// call
+		Return $this->call ( "Retrieve", $SoapEnvelope );
 	}
 	
 	/**
@@ -199,24 +246,37 @@ class DynamicsCrm {
 	 *         * $Result => false or array of std object with key parameter,\n
 	 *         </p>
 	 */
-	public function RetrieveMultiple($Table, $Where, $Columns, $Join = false, $Order = false) {
+	public function RetrieveMultiple($Table, $Where, $Columns=false, $Join = false, $Order = false) {
+		// check if there is some agregate inside parameter
 		if (is_array ( $Columns )) {
-			if ($this->array_key_exists_r('aggregate', $Columns) || $this->array_key_exists_r('groupby', $Columns)){
+			if ($this->array_key_exists_r ( 'aggregate', $Columns ) || $this->array_key_exists_r ( 'groupby', $Columns )) {
 				$Aggregate = 'true';
-		}else $Aggregate = 'false';
-		}else  $Aggregate = 'false';
+			} else
+				$Aggregate = 'false';
+		} else
+			$Aggregate = 'false';
+			// build Soap Enveloppe
+		try {
+				$Entity = $this->FormatFetchEntity ( $Table );
+				$Attributes = $this->FormatFetchAttribute ( $Columns );
+				$Order = $this->FormatFetchOrder ( $Order );
+				$Filter = $this->formatFetchFilter ( $Where );
+				if ($Join !== false){
+					$Join = $this->FormatFetchJoin ( $Join );
+				}else $Join='';
+			} catch ( Exception $e ) {
+				return $this->GetErrorObject ( $e->getMessage () );
+			}
+		
 		$SoapEnvelope = '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
 				 			 <s:Body>
 				    			<RetrieveMultiple xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
 				      				<query i:type="a:FetchExpression" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts">
 				       					 <a:Query>
 												&lt;fetch version=\'1.0\' output-format=\'xml-platform\' mapping=\'logical\' aggregate=\'' . $Aggregate . '\' distinct=\'false\'&gt;';
-		$SoapEnvelope .= $this->FormatFetchEntity ( $Table );
-		$SoapEnvelope .= $this->FormatFetchAttribute ( $Columns );
-		$SoapEnvelope .= $this->FormatFetchOrder ( $Order );
-		$SoapEnvelope .= $this->formatFetchFilter ( $Where );
-		if ($Join !== false)
-			$SoapEnvelope .= $this->formatFetchJoin ( $Join );
+		$SoapEnvelope.=$Entity.$Attributes.$Order.$Filter.$Join;
+	
+		// add footer
 		$SoapEnvelope .= '&lt;/entity&gt;
 				                               &lt;/fetch&gt;
 				</a:Query>
@@ -225,8 +285,9 @@ class DynamicsCrm {
 					  	      </s:Body>
 						</s:Envelope>
 						';
-		$Result = $this->call ( "RetrieveMultiple", $SoapEnvelope );
-		Return $Result;
+		
+		// call
+		Return $this->call ( "RetrieveMultiple", $SoapEnvelope );
 	}
 	
 	/**
@@ -247,6 +308,7 @@ class DynamicsCrm {
 	 *         </p>
 	 */
 	public function Delete($Table, $Id) {
+		// build soap Enveloppe
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
 							<soap:Header/>
 								<soap:Body>
@@ -256,8 +318,8 @@ class DynamicsCrm {
 									</ser:Delete>
 								</soap:Body>
 						</soap:Envelope>';
-		$Result = $this->call ( "Delete", $SoapEnvelope );
-		Return $Result;
+		// call
+		Return $this->call ( "Delete", $SoapEnvelope );
 	}
 	
 	/**
@@ -284,11 +346,18 @@ class DynamicsCrm {
 	 *         </p>
 	 */
 	function Update($Table, $Params, $Id) {
+		// check the array parameter first
+		try {
+			$Param = $this->FormatAttributes ( $Params );
+		} catch ( Exception $e ) {
+			return $this->GetErrorObject ( $e->getMessage () );
+		}
+		// build soap Enveloppe
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 							<soap:Body><Update xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
             <entity xmlns:b="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
                     <b:Attributes xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
-                       ' . $this->FormatAttribute ( $Params ) . '
+                       ' . $Param . '
                     </b:Attributes>
                     <b:EntityState i:nil="true"/>
                     <b:FormattedValues xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic"/>
@@ -298,6 +367,7 @@ class DynamicsCrm {
                 </entity></Update>
             </soap:Body>
         </soap:Envelope>';
+		// call
 		return $this->call ( 'Update', $SoapEnvelope );
 	}
 	
@@ -334,40 +404,172 @@ class DynamicsCrm {
 	 *         </p>
 	 */
 	public function Create($Table, $Params) {
+		try {
+			$Param = $this->FormatAttributes ( $Params );
+		} catch ( Exception $e ) {
+			return $this->GetErrorObject ( $e->getMessage () );
+		}
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 							<soap:Body>
 				<Create xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
             <entity xmlns:b="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
                     <b:Attributes xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
-                       ' . $this->FormatAttribute ( $Params ) . '
+                       ' . $Param . '
                     </b:Attributes>
   						<b:EntityState i:nil="true"/>
-                        <b:FormattedValues xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic"/>
+                        <b:FormattedValues />
                         <b:Id>00000000-0000-0000-0000-000000000000</b:Id>
                         <b:LogicalName>' . $Table . '</b:LogicalName>
-                        <b:RelatedEntities xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic"/>
-               			<b:RelatedEntities xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic"/>
+                        <b:RelatedEntities />
                 </entity></Create></soap:Body>
         </soap:Envelope>';
 		return $this->call ( 'Create', $SoapEnvelope );
 	}
 	
-	/*
-	 * Not Working ATM to be checked
+	
+	/**
+	 * @param unknown $Id
+	 * @param unknown $Table
+	 * @param unknown $StateCode
+	 * @param unknown $StatusCode
+	 * @return result|CrmResponse
 	 */
-	public function getCurrentUserInfo() {
+	public function SetState($Id, $Table, $StateCode, $StatusCode) {
+		if (isset ( $this->StateCheck [$Table] [$StateCode] ) && in_array ( $StatusCode, $this->StateCheck [$Table] [$StateCode] )) {
+			
+			$Request = '<request i:type="b:SetStateRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
+       <a:Parameters xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
+         <a:KeyValuePairOfstringanyType>
+           <c:key>EntityMoniker</c:key>
+           <c:value i:type="a:EntityReference">
+             <a:Id>' . $Id . '</a:Id>
+             <a:LogicalName>' . $Table . '</a:LogicalName>
+             <a:Name i:nil="true" />
+           </c:value>
+         </a:KeyValuePairOfstringanyType>
+       <a:KeyValuePairOfstringanyType>
+           <c:key>State</c:key>
+           <c:value i:type="a:OptionSetValue">
+             <a:Value>' . $StateCode . '</a:Value>
+           </c:value>
+         </a:KeyValuePairOfstringanyType>
+		<a:KeyValuePairOfstringanyType>
+           <c:key>Status</c:key>
+           <c:value i:type="a:OptionSetValue">
+             <a:Value>' . $StatusCode . '</a:Value>
+           </c:value>
+         </a:KeyValuePairOfstringanyType></a:Parameters>
+       <a:RequestId i:nil="true" />
+       <a:RequestName>SetState</a:RequestName>
+     </request>';
+			return $this->ExecuteBody ( $Request );
+		} else {
+			$strPair = print_r ( $this->StateCheck [$Table], true );
+			return $this->GetErrorObject ( 'Pair State and status not avaible for ' . $Table . ' should be in  State => array( avaible status) :  ' . $strPair );
+		}
+	}
+	
+	
+	/**
+	 * @return result
+	 */
+	public function GetAllEntities() {
+		$Request = '<request i:type="a:RetrieveAllEntitiesRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts">
+                   <a:Parameters xmlns:b="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
+                     <a:KeyValuePairOfstringanyType>
+                       <b:key>EntityFilters</b:key>
+                       <b:value i:type="c:EntityFilters" xmlns:c="http://schemas.microsoft.com/xrm/2011/Metadata">Privileges</b:value>
+                     </a:KeyValuePairOfstringanyType>
+                     <a:KeyValuePairOfstringanyType>
+                       <b:key>RetrieveAsIfPublished</b:key>
+                       <b:value i:type="c:boolean" xmlns:c="http://www.w3.org/2001/XMLSchema">true</b:value>
+                     </a:KeyValuePairOfstringanyType>
+                   </a:Parameters>
+                   <a:RequestId i:nil="true" />
+                   <a:RequestName>RetrieveAllEntities</a:RequestName>
+                 </request>
+              ';
+		$Return = $this->ExecuteBody ( $Request );
+		return $Return;
+	}
+	
+	/**
+	 * @param unknown $EntityId
+	 * @param unknown $WorkflowId
+	 * @return result
+	 */
+	public function Workflow($EntityId, $WorkflowId) {
+		$Request = '<request i:type="b:ExecuteWorkflowRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
+					<a:Parameters xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
+					<a:KeyValuePairOfstringanyType>
+					<c:key>EntityId</c:key>
+	<c:value i:type="d:guid" xmlns:d="http://schemas.microsoft.com/2003/10/Serialization/">$EntityId</c:value>
+	</a:KeyValuePairOfstringanyType>
+	<a:KeyValuePairOfstringanyType>
+	<c:key>WorkflowId</c:key>
+	<c:value i:type="d:guid" xmlns:d="http://schemas.microsoft.com/2003/10/Serialization/">$WorkflowId</c:value>
+	</a:KeyValuePairOfstringanyType>
+	</a:Parameters>
+	<a:RequestId i:nil="true" />
+	<a:RequestName>ExecuteWorkflow</a:RequestName>
+	</request>';
+		$Return = $this->ExecuteBody ( $Request );
+		$Return = $this->ParseDatas ( $Return->Result->Body->ExecuteResponse->ExecuteResult->Results, $Return );
+		return $this->ExecuteBody ( $Request );
+	}
+	
+	/**
+	 * @todo
+	 * @return result
+	 */
+	public function Associate() {
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-								<soap:Body>
-									<Execute xmlns=http://schemas.microsoft.com/crm/2007/WebServices>
-         			<request i:type="b:WhoAmIRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
+							<soap:Body>
+			<Associate xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
+			<subType>
+			</subType>
+			<objectType>
+			10069</objectType>
+			<parentObjectType>10095</parentObjectType>
+			<objectId>568B31F9-8AEE-E211-8830-005056B74E4F</objectId>
+			<parentId>A5DF8846-3BF0-E211-8830-005056B74E4F</parentId>
+			<associationName>classification_occupation</associationName>
+			</Associate></soap:Body>
+        </soap:Envelope>';
+		return $this->call ( 'Associate', $SoapEnvelope );
+	}
+	
+
+	/**
+	 * @return object
+	 */
+	public function GetCurrentUserInfo() {
+		$Request = '<request i:type="b:WhoAmIRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
                             <a:Parameters xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic" />
                             <a:RequestId i:nil="true" />
                             <a:RequestName>WhoAmI</a:RequestName>
-                          </request>			
-									</Execute>
-								</soap:Body>
-						</soap:Envelope>';
+                          </request>';
 		
+		$Return = $this->ExecuteBody ( $Request );
+		$Return = $this->ParseDatas ( $Return->Result->Body->ExecuteResponse->ExecuteResult->Results, $Return );
+		return $Return;
+	}
+	
+	/**
+	 * Format Entity Header
+	 *
+	 * @param string $Request
+	 *        	Request Body for Execute
+	 * @return result parsed and in an CrmResponse Object according to action
+	 */
+	private function ExecuteBody($Request) {
+		$SoapEnvelope = '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
+				 			 <s:Body>
+				   				 <Execute xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+             			 			' . $Request . '
+              					</Execute>
+							</s:Body>
+						</s:Envelope>';
 		return $this->call ( 'Execute', $SoapEnvelope );
 	}
 	
@@ -381,7 +583,7 @@ class DynamicsCrm {
 	 * @return result parsed and in an CrmResponse Object according to action
 	 */
 	private function call($operation, $soapBody) {
-		$headers = $this->generateSoapHeader ( $operation );
+		$headers = $this->GenerateSoapHeader ( $operation );
 		
 		$ch = curl_init ();
 		curl_setopt ( $ch, CURLOPT_URL, $this->serv_adress );
@@ -391,10 +593,9 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_POSTFIELDS, $soapBody );
 		curl_setopt ( $ch, CURLOPT_HTTPAUTH, CURLAUTH_NTLM );
 		curl_setopt ( $ch, CURLOPT_USERPWD, $this->user . ':' . $this->password );
-		
 		$response = curl_exec ( $ch );
 		$Return = new CrmResponse ();
-		if (curl_exec ( $ch ) === false) {
+		if ($response === false) {
 			$Return->Error = True;
 			$Return->ErrorCode = 0;
 			$Return->ErrorMessage = curl_error ( $ch );
@@ -403,9 +604,11 @@ class DynamicsCrm {
 			
 			$response = str_replace ( '<a:', '<', $response );
 			$response = str_replace ( '<b:', '<', $response );
+			$response = str_replace ( '<c:', '<', $response );
 			$response = str_replace ( '<s:', '<', $response );
 			$response = str_replace ( '</a:', '</', $response );
 			$response = str_replace ( '</b:', '</', $response );
+			$response = str_replace ( '</c:', '</', $response );
 			$response = str_replace ( '</s:', '</', $response );
 			$xml = simplexml_load_string ( $response );
 			
@@ -436,6 +639,13 @@ class DynamicsCrm {
 							$Return->ErrorMessage = "Unknown Error";
 						}
 						Break;
+					case 'Execute' :
+						$Return->NbResult = 1;
+						$Return->Result = $xml;
+						break;
+					case 'Associate' :
+						die ( print_r ( $xml ) );
+						break;
 					case 'Delete' :
 						if (isset ( $xml->Body->DeleteResponse )) {
 							$Return->NbResult = 1;
@@ -495,28 +705,34 @@ class DynamicsCrm {
 		$Attributes = "";
 		if (is_array ( $Columns )) {
 			foreach ( $Columns as $column ) {
-				// aggregate cases
-				if (isset ( $column ['name'] )) {
-					if (empty ( $column ['alias'] )) {
-						$column ['alias'] = $column ['name'];
-					}
-					// basic aggregate function avg , max, min, sum, count (COUNT(*)) ,countcolumn (COUNT(name)) ,countdistinct (COUNT(DISTINCT name))
-					if (! empty ( $column ['aggregate'] )) {
-						if ($column ['aggregate'] == 'countdistinct') {
-							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' aggregate='countcolumn' distinct='true' /&gt;";
-						} else {
-							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' aggregate='" . $column ['aggregate'] . "' /&gt;";
+				if (is_array ( $column )) {
+					$this->TestParameter ( $column, 'name' );
+					// aggregate cases
+					if (isset ( $column ['name'] )) {
+						if (empty ( $column ['alias'] )) {
+							$column ['alias'] = $column ['name'];
 						}
-						// so is that a groupby?
-					} else if (isset ( $column ['groupby'] )) {
-						
-						if ($column ['groupby'] !== true) {
-							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' dategrouping='" . $column ['groupby'] . "' groupby='true' /&gt;";
-						} else {
-							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' groupby='true' /&gt;";
+						// basic aggregate function avg , max, min, sum, count (COUNT(*)) ,countcolumn (COUNT(name)) ,countdistinct (COUNT(DISTINCT name))
+						if (! empty ( $column ['aggregate'] )) {
+							$this->TestAgreggate ( $column ['aggregate'] );
+							if ($column ['aggregate'] == 'countdistinct') {
+								$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' aggregate='countcolumn' distinct='true' /&gt;";
+							} else {
+								$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' aggregate='" . $column ['aggregate'] . "' /&gt;";
+							}
+							// so is that a groupby?
+						} else if (isset ( $column ['groupby'] )) {
+							$this->TestParameter ( $column, 'alias' );
+							if (isset ( $column ['alias'] )) {
+								if ($column ['groupby'] !== true) {
+									$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' dategrouping='" . $column ['groupby'] . "' groupby='true' /&gt;";
+								} else {
+									$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' groupby='true' /&gt;";
+								}
+							}
 						}
+						// normal cases
 					}
-					// normal cases
 				} else
 					$Attributes .= "&lt;attribute name='" . $column . "' /&gt;";
 			}
@@ -525,9 +741,10 @@ class DynamicsCrm {
 	}
 	
 	/**
-	 * Format Attributes for insert and updates<p>
+	 * Format Attributes for insert,updates and execute<p>
 	 *
-	 * @param $Params Attributes
+	 * @param array $Params
+	 *        	Attributes
 	 *        	parameter <p>
 	 *        	
 	 *        	* array(\n
@@ -541,71 +758,194 @@ class DynamicsCrm {
 	 *        	* 'type'=>'EntityReference',\n
 	 *        	* 'id'=>'guidforentity',\n
 	 *        	* 'name'=>'entityname(table)'\n
-	 *        	* ) , \n
+	 *        	* )
+	 *        	3=>array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'ActivityParty',\n
+	 *        	* 'value'=>array(\n
+	 *        	"entity1"=>array(\n
+	 *        	* 1=>array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'Field type',\n
+	 *        	* 'value'=>'value'\n
+	 *        	* ) ,\n
+	 *        	* 2=>array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'EntityReference',\n
+	 *        	* 'id'=>'guidforentity',\n
+	 *        	* 'name'=>'entityname(table)'\n
+	 *        	* ) \n
+	 *        	* )\n
+	 *        	* )\n
+	 *        	, \n
 	 *        	*)\n
 	 *        	
-	 * @return correct Attributes XML for insert/update cases
+	 * @return correct Attributes XML for insert/update/execute cases
 	 */
-	private function FormatAttribute($Params) {
+	private function FormatAttributes($Params) {
 		$TxtAttribute = "";
 		
 		if (is_array ( $Params )) {
-			
 			foreach ( $Params as $Param ) {
-				if (isset ( $Param ['field'] ) && isset ( $Param ['type'] )) {
-					$TxtAttribute .= '<b:KeyValuePairOfstringanyType>
-                            <c:key>' . $Param ['field'] . '</c:key>';
-					switch ($Param ['type']) {
-						case 'OptionSetValue' :
-						case 'optionsetvalue' :
-						case 'option' :
-						case 'Option' :
-							$TxtAttribute .= '<c:value i:type="b:OptionSetValue"><b:value>' . $Param ['value'] . '</b:value></c:value>';
-							break;
-						case 'Money' :
-						case 'money' :
-							$TxtAttribute .= '<c:value i:type="b:Money">><b:value>' . $Param ['value'] . '</b:value></c:value>';
-							break;
-						case 'Boolean' :
-						case 'boolean' :
-						case 'bool' :
-						case 'Bool' :
-							$TxtAttribute .= '<c:value i:type="d:boolean" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
-							break;
-						case 'Integer' :
-						case 'integer' :
-						case 'Int' :
-						case 'int' :
-							$TxtAttribute .= '<c:value i:type="d:int" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
-							break;
-						case 'DateTime' :
-						case 'datetime' :
-							$TxtAttribute .= '<c:value i:type="d:dateTime" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
-							break;
-						
-						case 'EntityReference' :
-						case 'entityreference' :
-						case 'Entity' :
-						case 'entity' :
-							$TxtAttribute .= '<c:value i:type="b:EntityReference">
-												<b:id>' . $Param ["id"] . '</b:id>
-												<b:logicalname>' . $Param ["name"] . '</b:logicalname>
-												<b:name i:nil="true">
-												</b:name></c:value>';
-							break;
-						case 'String' :
-						case 'string' :
-						default :
-							$TxtAttribute .= '<c:value i:type="d:string" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
-							break;
-					}
-					$TxtAttribute .= '</b:KeyValuePairOfstringanyType>';
-				}
+				$TxtAttribute .= $this->FormatAttribute ( $Param );
 			}
 		}
 		return $TxtAttribute;
 	}
 	
+	/**
+	 * Format Attributes for insert updates and execute<p>
+	 *
+	 * @param array $Param
+	 *        	Attribute
+	 *        	parameter <p>
+	 *        	
+	 *        	*
+	 *        	* array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'Field type',\n
+	 *        	* 'value'=>'value'\n
+	 *        	* )
+	 *        	* array( \n
+	 *        	* 'field'=>'fieldname',\n
+	 *        	* 'type'=>'EntityReference',\n
+	 *        	* 'id'=>'guidforentity',\n
+	 *        	* 'name'=>'entityname(table)'\n
+	 *        	* )
+	 *        	
+	 * @return correct Attribute XML for insert/update/execute cases
+	 */
+	private function FormatAttribute($Param) {
+		$TxtAttribute = "";
+		$this->TestParameters ( $Param, array('field','type') );
+		if (isset ( $Param ['field'] ) && isset ( $Param ['type'] )) {
+			$TxtAttribute .= '<b:KeyValuePairOfstringanyType>
+                            <c:key>' . $Param ['field'] . '</c:key>';
+			switch ($Param ['type']) {
+				case 'OptionSetValue' :
+				case 'optionsetvalue' :
+				case 'option' :
+				case 'Option' :
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="b:OptionSetValue"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					break;
+				case 'Money' :
+				case 'money' :
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="b:Money"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					break;
+				case 'Boolean' :
+				case 'boolean' :
+				case 'bool' :
+				case 'Bool' :
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="d:boolean" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
+					break;
+				case 'Integer' :
+				case 'integer' :
+				case 'Int' :
+				case 'int' :
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="d:int" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
+					break;
+				case 'DateTime' :
+				case 'datetime' :
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="d:dateTime" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
+					break;
+				case 'String' :
+				case 'string' :
+				default :
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="d:string" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
+					break;
+				case 'EntityReference' :
+				case 'entityreference' :
+				case 'Entity' :
+				case 'entity' :
+					$this->TestParameter ( $Param, 'id','name' );
+					$TxtAttribute .= '<c:value i:type="b:EntityReference">
+												<b:Id>' . $Param ["id"] . '</b:Id>
+												<b:LogicalName>' . $Param ["name"] . '</b:LogicalName>
+												<b:Name i:nil="true" />
+												</c:value>';
+					break;
+				case 'ActivityParty' :
+				case 'Activity' :
+				case 'activityparty' :
+				case 'activity' :
+				case 'ArrayOfEntity' :
+				case 'arrayofentity' :
+				case 'Array' :
+				case 'array' :
+					$TxtAttribute .= '<c:value i:type="b:ArrayOfEntity">';
+					$this->TestParameter ( $Param, 'value' );
+					foreach ( $Param ['value'] as $entity ) {
+						$TxtAttribute .= ' <b:Entity>
+									<b:Attributes>';
+						$TxtAttribute .= $this->FormatAttribute ( $entity );
+						$TxtAttribute .= '</b:Attributes><b:Entitystate i:nil="true" />
+							<b:FormattedValues />
+								<b:Id>00000000-0000-0000-0000-000000000000</b:Id>
+							<b:LogicalName>activityparty</b:LogicalName>
+							<b:RelatedEntities />
+							</b:Entity>';
+					}
+					$TxtAttribute .= '
+  								</c:value>';
+					
+					break;
+			}
+			$TxtAttribute .= '</b:KeyValuePairOfstringanyType>';
+		}
+		
+		return $TxtAttribute;
+	}
+	/**
+	 * @param unknown $Param
+	 * @param unknown $Fields
+	 */
+	private function TestParameters($Param, $Fields) {
+		foreach ( $Fields as $Field ) {
+			$this->TestParameter ( $Param, $Field );
+		}
+	}
+	
+	/**
+	 * @param unknown $Param
+	 * @param unknown $field
+	 * @throws \InvalidArgumentException
+	 */
+	private function TestParameter($Param, $field) {
+		if (! isset ( $Param [$field] )) {
+			$strArray = print_r ( $Param, true );
+			throw new \InvalidArgumentException ( sprintf ( "Missing Parameter $field for array : $strArray" ) );
+		}
+	}
+	
+	/**
+	 * @param unknown $Param
+	 * @throws \InvalidArgumentException
+	 */
+	private function TestAgreggate($Param) {
+		if (! in_array ( $Param, $this->Aggregate )) {
+			$AggregateValue = print_r ( $this->Aggregate, true );
+			throw new \InvalidArgumentException ( sprintf ( "Aggregate Invalid should be in : $AggregateValue" ) );
+		}
+	}
+	
+	/**
+	 * @param unknown $message
+	 * @return CrmResponse
+	 */
+	private function GetErrorObject($message) {
+		$Return = new CrmResponse ();
+		$Return->Error = True;
+		$Return->ErrorCode = 0;
+		$Return->ErrorMessage = $message;
+		$Return->Result = False;
+		return $Return;
+	}
 	/**
 	 * Format Columns for REtrieveMultiple<p>
 	 *
@@ -619,6 +959,9 @@ class DynamicsCrm {
 	 * @return correct Columns XML for REtrieveMultiple
 	 */
 	private function FormatColumn($Columns) {
+		if ($Columns !== false && ! is_array ( $Columns )) {
+			throw new \InvalidArgumentException ( sprintf ( "Column Parameter  invalid : $Columns" ) );
+			}	
 		$AllCol = ($Columns == false) ? "true" : "false";
 		$TxtColumn = '<ser:columnSet><con:AllColumns>' . $AllCol . '</con:AllColumns><con:Columns>';
 		if ($Columns != false) {
@@ -651,9 +994,12 @@ class DynamicsCrm {
 		$TxtOrder = "";
 		if (is_array ( $Orders )) {
 			foreach ( $Orders as $Order ) {
-				$TxtOrder .= "&lt;order attribute='" . $Order ['Column'] . "' descending='";
-				$TxtOrder .= ($Order ['Order'] == 'Asc') ? "false" : "true";
-				$TxtOrder .= "' /&gt;";
+				$this->TestParameters ( $Order, array('Column','Order'));
+				if (isset ( $Order ['Column'] ) && isset ( $Order ['Order'] )) {
+					$TxtOrder .= "&lt;order attribute='" . $Order ['Column'] . "' descending='";
+					$TxtOrder .= ($Order ['Order'] == 'Asc') ? "false" : "true";
+					$TxtOrder .= "' /&gt;";
+				}
 			}
 		}
 		return $TxtOrder;
@@ -705,9 +1051,9 @@ class DynamicsCrm {
 		$TxtFilter = "";
 		if (is_array ( $Filters )) {
 			if (isset ( $Filters ['Type'] )) {
-				$TxtFilter .= "&lt;filter type='" . $Filters ['Type'] . "' &gt;";
+				$TxtHead = "&lt;filter type='" . $Filters ['Type'] . "' &gt;";
 			} else {
-				$TxtFilter .= '&lt;filter &gt;';
+				$TxtHead = '&lt;filter &gt;';
 			}
 			foreach ( $Filters as $Filter ) {
 				if (isset ( $Filter ['Type'] )) {
@@ -718,11 +1064,13 @@ class DynamicsCrm {
 					}
 				}
 			}
-			$TxtFilter .= '&lt;/filter &gt;';
-		} else
-			return "";
+			if($TxtFilter!=""){
+			$TxtFilter=$TxtHead.$TxtFilter.'&lt;/filter &gt;';
+			return $TxtFilter;
+			}else return "";
+		} else	return "";
 		
-		return $TxtFilter;
+	
 	}
 	
 	/**
@@ -749,7 +1097,7 @@ class DynamicsCrm {
 	 *        	</p>
 	 * @return correct XML for request this condition
 	 */
-	private function formatFetchJoin($Joins) {
+	private function FormatFetchJoin($Joins) {
 		// so we dont have to make a special statement for only 1 join
 		$TxtJoin = "";
 		if (isset ( $Joins ['name'] )) {
@@ -758,14 +1106,15 @@ class DynamicsCrm {
 			);
 		}
 		foreach ( $Joins as $Join ) {
-			
+			$this->TestParameters($Join,array('name','from','to','type','columns','where'));
 			$TxtJoin .= "&lt;link-entity name='" . $Join ['name'] . "' from='" . $Join ['from'] . "' to='" . $Join ['to'] . "' ";
-			if (! empty ( $Join ['alias'] ))
+			if (! empty ( $Join ['alias'] )){
 				$TxtJoin .= " alias='" . $Join ['alias'] . "' ";
+			}
 			$TxtJoin .= " link-type='" . $Join ['type'] . "' &gt;";
 			$TxtJoin .= $this->FormatFetchAttribute ( $Join ['columns'] );
 			if (! empty ( $Join ['nested'] ))
-				$TxtJoin .= formatFetchJoin ( $Join );
+				$TxtJoin .= FormatFetchJoin ( $Join );
 			$TxtJoin .= $this->formatFetchFilter ( $Join ['where'] );
 			$TxtJoin .= "&lt;/link-entity&gt;";
 		}
@@ -786,102 +1135,58 @@ class DynamicsCrm {
 	 * @return correct XML for request this condition
 	 */
 	private function FormatCondition($Filter) {
-		switch ($Filter ['Op']) {
-			/*
-			 * The operators wich dont need a value
-			 * so no need for value here
-			 */
-			case 'eq-userid' :
-			case 'ne-userid' :
-			case 'eq-bysinessid' :
-			case 'ne-bysinessid' :
-			case 'eq-userteams' :
-			case 'last-seven-days' :
-			case 'last-fiscal-period' :
-			case 'last-fiscal-year' :
-			case 'last-month' :
-			case 'last-week' :
-			case 'last-year' :
-			case 'next-seven-days' :
-			case 'next-fiscal-period' :
-			case 'next-fiscal-year' :
-			case 'next-month' :
-			case 'next-week' :
-			case 'next-year' :
-			case 'null' :
-			case 'this-fiscal-period' :
-			case 'this-fiscal-year' :
-			case 'this-month' :
-			case 'this-week' :
-			case 'this-year' :
-			case 'today' :
-			case 'not-null' :
-			case 'tomorrow' :
-			case 'yesterday' :
-				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' /&gt;";
-				break;
+		
+		/*
+		 * The operators wich dont need a value
+		 * so no need for value here
+		 */
+		if (in_array ( $Filter ['Op'], $this->Operator ['0'] )) {
+			$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' /&gt;";
 			/*
 			 * The basic operators
 			 * Value to be set, nothing much
 			 */
-			case 'like' :
-			case 'not-like' :
-			case 'eq' :
-			case 'ge' :
-			case 'gt' :
-			case 'le' :
-			case 'lt' :
-			case 'ne' :
-			case 'on' :
-			case 'on-or-after' :
-			case 'on-or-before' :
-			case 'in-fiscal-period' :
-			case 'in-fiscal-year' :
-			case 'last-x-days' :
-			case 'last-x-fiscal-periods' :
-			case 'last-x-fiscal-years' :
-			case 'last-x-hours' :
-			case 'last-x-months' :
-			case 'last-x-weeks' :
-			case 'last-x-years' :
-			case 'next-x-days' :
-			case 'next-x-fiscal-periods' :
-			case 'next-x-fiscal-years' :
-			case 'next-x-hours' :
-			case 'next-x-months' :
-			case 'next-x-weeks' :
-			case 'next-x-years' :
-			case 'olderthan-x-months' :
-			default :
-				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' value='" . $Filter ['Value'] . "'  /&gt;";
-				break;
+		} else if (in_array ( $Filter ['Op'], $this->Operator ['1'] )) {
+			$this->TestParameters ( $Filter, array (
+					'Column',
+					'Value' 
+			) );
+			$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' value='" . $Filter ['Value'] . "'  /&gt;";
 			/*
 			 * The in operators
 			 * Value is now an array with data to be tested array('1','2',...)
 			 */
-			case 'not-in' :
-			case 'in' :
-				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' &gt;";
-				foreach ( $Filter ['Value'] as $Value ) {
-					$Condition .= '&lt;value&gt;' . $Value . '&lt;/value&gt;';
-				}
-				$Condition .= '&lt;/condition &gt;';
-				break;
+		} else if (in_array ( $Filter ['Op'], $this->Operator ['2'] )) {
+			$this->TestParameters ( $Filter, array (
+					'Column',
+					'Value' 
+			) );
+			$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' &gt;";
+			if (! is_array ( $Filter ['Value'] )) {
+				$TxtFilter = print_r ( $Filter, true );
+				throw new \InvalidArgumentException ( sprintf ( "Filter Incorrect [Value] for this kind of operator should be an array  : $TxtFilter" ) );
+			}
+			foreach ( $Filter ['Value'] as $Value ) {
+				$Condition .= '&lt;value&gt;' . $Value . '&lt;/value&gt;';
+			}
+			$Condition .= '&lt;/condition &gt;';
 			/*
 			 * The 2 values operator
 			 * Value and Value2 in array
 			 */
-			case 'between' :
-			case 'not-between' :
-			case 'in-fiscal-period-and-year' :
-			case 'in-or-after-fiscal-period-and-year' :
-			case 'in-or-before-fiscal-period-and-year' :
-				$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' &gt;";
-				$Condition .= '&lt;value&gt;' . $Filter ['Value'] . '&lt;/value&gt; &lt;value&gt;' . [ 
-						'Value2' 
-				] . '&lt;/value&gt;';
-				$Condition .= '&lt;/condition &gt;';
-				break;
+		} else if (in_array ( $Filter ['Op'], $this->Operator ['3'] )) {
+			$this->TestParameters ( $Filter, array (
+					'Column',
+					'Value','Value2' 
+			) );
+			$Condition = "&lt;condition attribute='" . $Filter ['Column'] . "' operator='" . $Filter ['Op'] . "' &gt;";
+			$Condition .= '&lt;value&gt;' . $Filter ['Value'] . '&lt;/value&gt; &lt;value&gt;' . $Filter[ 
+					'Value2' 
+			] . '&lt;/value&gt;';
+			$Condition .= '&lt;/condition &gt;';
+		} else {
+			$ListOperator = print_r ( $this->Operator, true );
+			throw new \InvalidArgumentException ( sprintf ( "Condition '" . $Filter ['Op'] . "' Invalid should be in : $ListOperator" ) );
 		}
 		
 		return $Condition;
@@ -934,24 +1239,63 @@ class DynamicsCrm {
 	 */
 	private function ParseResultLine($Data) {
 		$ResultLine = new \stdClass ();
-		foreach ( $Data->Attributes as $keypair ) {
-			foreach ( $keypair->KeyValuePairOfstringanyType as $data ) {
-				$key = str_ireplace('.','_', $data->key);
-				if (isset ( $data->value->Value ))
-					$value = ( string ) $data->value->Value;
-				else
-					$value = ( string ) $data->value;
-				if (ctype_digit ( $value )) {
-					$ResultLine->$key = ( int ) $value;
-				} else if (is_float ( $value )) {
-					$ResultLine->$key = ( float ) $value;
-				} else if (is_bool ( $value )) {
-					$ResultLine->$key = ( bool ) $value;
-				} else
-					$ResultLine->$key = $value;
+		if (isset ( $Data->Attributes )) {
+			foreach ( $Data->Attributes as $keypair ) {
+				foreach ( $keypair->KeyValuePairOfstringanyType as $data ) {
+					$key = str_ireplace ( '.', '_', $data->key );
+					$ResultLine->$key = $this->ParseKeyPair ( $data );
+				}
+			}
+		} else {
+			
+			foreach ( $Data as $data ) {
+				if (isset ( $data->key )) {
+					$key = str_ireplace ( '.', '_', $data->key );
+					$ResultLine->$key = $this->ParseKeyPair ( $data );
+				}
 			}
 		}
 		return $ResultLine;
+	}
+	
+	/**
+	 * @param unknown $data
+	 * @return number|boolean|Ambigous <string, multitype:string , multitype:stdClass >|Ambigous <multitype:string , string, multitype:stdClass >
+	 */
+	private function ParseKeyPair($data) {
+		// liason simple
+		if (isset ( $data->value->Value )) {
+			$value = ( string ) $data->value->Value;
+			// entité logique
+		} else if (isset ( $data->value->LogicalName )) {
+			$value = array (
+					'id' => ( string ) $data->value->Id,
+					'logicalname' => ( string ) $data->value->LogicalName,
+					'name' => ( string ) $data->value->Name 
+			);
+		} else if (isset ( $data->value->Entities )) {
+			$Entities = array ();
+			foreach ( $data->value->Entities as $entity ) {
+				if (isset ( $entity->Entity->Attributes )) {
+					$Entities [] = $this->ParseResultLine ( $entity->Entity );
+				}
+			}
+			
+			$value = $Entities;
+		} else
+			$value = ( string ) $data->value;
+		
+		if (! is_array ( $value )) {
+			if (ctype_digit ( $value )) {
+				return ( int ) $value;
+			} else if (is_float ( $value )) {
+				return ( float ) $value;
+			} else if (is_bool ( $value )) {
+				return ( bool ) $value;
+			} else
+				return $value;
+		} else
+			return $value;
 	}
 	
 	/**
@@ -977,7 +1321,7 @@ class DynamicsCrm {
 	 *        	Operation name (wdsl wise)
 	 * @return array formated Header
 	 */
-	private function generateSoapHeader($operation) {
+	private function GenerateSoapHeader($operation) {
 		$soap_action = 'http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/' . $operation;
 		
 		$headers = array (
