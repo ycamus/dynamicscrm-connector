@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['setpassword',['setPassword',['../class_dynamics_crm.html#a3e35c8d3dbb2c513c618a664389e0926',1,'DynamicsCrm']]],
-  ['setservadress',['setServAdress',['../class_dynamics_crm.html#a889f3b57e29af7035d32a797bbca528d',1,'DynamicsCrm']]],
-  ['setuser',['setUser',['../class_dynamics_crm.html#a45c268861653a20ab9677bbba15ec075',1,'DynamicsCrm']]]
+  ['readme_2emd',['README.md',['../_r_e_a_d_m_e_8md.html',1,'']]],
+  ['retrieve',['Retrieve',['../class_dynamics_crm.html#a65d40979d3335b8cff93b78f2f8809cf',1,'DynamicsCrm']]],
+  ['retrievemultiple',['RetrieveMultiple',['../class_dynamics_crm.html#a42d5158a963a0a056dd4243318258608',1,'DynamicsCrm']]]
 ];

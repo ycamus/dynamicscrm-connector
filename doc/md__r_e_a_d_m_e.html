@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.8"/>
-<title>Dynamics Crm Connector: Data Fields - Variables</title>
+<title>Dynamics Crm Connector: dynamicscrm-connector</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -38,9 +38,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div id="navrow1" class="tabs">
     <ul class="tablist">
       <li><a href="index.html"><span>Main&#160;Page</span></a></li>
-      <li><a href="pages.html"><span>Related&#160;Pages</span></a></li>
+      <li class="current"><a href="pages.html"><span>Related&#160;Pages</span></a></li>
       <li><a href="namespaces.html"><span>Namespaces</span></a></li>
-      <li class="current"><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
+      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
       <li><a href="files.html"><span>Files</span></a></li>
       <li>
         <div id="MSearchBox" class="MSearchBoxInactive">
@@ -60,21 +60,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       </li>
     </ul>
   </div>
-  <div id="navrow2" class="tabs2">
-    <ul class="tablist">
-      <li><a href="annotated.html"><span>Data&#160;Structures</span></a></li>
-      <li><a href="classes.html"><span>Data&#160;Structure&#160;Index</span></a></li>
-      <li class="current"><a href="functions.html"><span>Data&#160;Fields</span></a></li>
-    </ul>
-  </div>
-  <div id="navrow3" class="tabs2">
-    <ul class="tablist">
-      <li><a href="functions.html"><span>All</span></a></li>
-      <li><a href="functions_func.html"><span>Functions</span></a></li>
-      <li class="current"><a href="functions_vars.html"><span>Variables</span></a></li>
-    </ul>
-  </div>
-</div><!-- top -->
 <!-- window showing the filter options -->
 <div id="MSearchSelectWindow"
      onmouseover="return searchBox.OnSearchSelectShow()"
@@ -89,43 +74,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </iframe>
 </div>
 
+</div><!-- top -->
+<div class="header">
+  <div class="headertitle">
+<div class="title">dynamicscrm-connector </div>  </div>
+</div><!--header-->
 <div class="contents">
-&#160;<ul>
-<li>$Aggregate
-: <a class="el" href="class_dynamics_crm.html#a04f3650edd2deca8d5e5c30b2776cb63">DynamicsCrm</a>
-</li>
-<li>$Error
-: <a class="el" href="class_crm_response.html#a1912bb724205bd608339132c008204b3">CrmResponse</a>
-</li>
-<li>$ErrorCode
-: <a class="el" href="class_crm_response.html#a305cd69e335c3dcf352d6d38cc1cf4a6">CrmResponse</a>
-</li>
-<li>$ErrorMessage
-: <a class="el" href="class_crm_response.html#a41c19981df5d0179c171d2738ed31909">CrmResponse</a>
-</li>
-<li>$NbResult
-: <a class="el" href="class_crm_response.html#acd77eeb6f8af77b9031ca3effcc358a5">CrmResponse</a>
-</li>
-<li>$Operator
-: <a class="el" href="class_dynamics_crm.html#ae564ceaf7a701676d16e248a760d511a">DynamicsCrm</a>
-</li>
-<li>$password
-: <a class="el" href="class_dynamics_crm.html#a607686ef9f99ea7c42f4f3dd3dbb2b0d">DynamicsCrm</a>
-</li>
-<li>$Result
-: <a class="el" href="class_crm_response.html#a390d5702f3c15330fd764dbf08d5b2db">CrmResponse</a>
-</li>
-<li>$serv_adress
-: <a class="el" href="class_dynamics_crm.html#af71de9234c23c48f6a0c1f451782f3c4">DynamicsCrm</a>
-</li>
-<li>$StateCheck
-: <a class="el" href="class_dynamics_crm.html#a32a57ae44284c45639d2ccb420ff882e">DynamicsCrm</a>
-</li>
-<li>$user
-: <a class="el" href="class_dynamics_crm.html#a598ca4e71b15a1313ec95f0df1027ca5">DynamicsCrm</a>
-</li>
-</ul>
-</div><!-- contents -->
+<div class="textblock"><p>Symfony package for Dynamics CRM connection on NTLM</p>
+<p>This bundle will help to connect to Microsoft CRM 2011 in NTLM Based on Curl this will allow the Usage of standard commands :</p>
+<p>$DynamicsCrm=new <a class="el" href="class_dynamics_crm.html">DynamicsCrm</a>($ServAdress, $User, $Password);</p>
+<p>Retrieve</p>
+<p>$DynamicsCrm-&gt;Retrieve($Table, $Id, $Columns);</p>
+<p>RetrieveMultiple</p>
+<p>$result=$DynamicsCrm-&gt;RetrieveMultiple($table,$Where, $Columns,$Join,$Order);</p>
+<p>Update</p>
+<p>$DynamicsCrm-&gt;Update($Table, $Params, $Id);</p>
+<p>Create</p>
+<p>$DynamicsCrm-&gt;Create($Table, $Params);</p>
+<p>Delete</p>
+<p>$DynamicsCrm-&gt;Delete($Table, $Id);</p>
+<h6></h6>
+<p>Installation</p>
+<p>if by any mean you dont get the bundle from packagist add to you composer.json under require<br />
+ "dynamicscrm/connector" : "dev-master" to you composer.json and then : composer install or</p>
+<p>composer update enjoy the bundle </p>
+</div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
 Generated on Fri Oct 24 2014 17:59:58 for Dynamics Crm Connector by &#160;<a href="http://www.doxygen.org/index.html">
