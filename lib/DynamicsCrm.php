@@ -589,6 +589,8 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_URL, $this->serv_adress );
 		curl_setopt ( $ch, CURLOPT_RETURNTRANSFER, true );
 		curl_setopt ( $ch, CURLOPT_HTTPHEADER, $headers );
+		curl_setopt ( $ch, CURLOPT_UNRESTRICTED_AUTH,true);
+		curl_setopt ( $ch, CURLOPT_FOLLOWLOCATION,true);
 		curl_setopt ( $ch, CURLOPT_POST, true );
 		curl_setopt ( $ch, CURLOPT_POSTFIELDS, $soapBody );
 		curl_setopt ( $ch, CURLOPT_HTTPAUTH, CURLAUTH_NTLM );
@@ -611,7 +613,6 @@ class DynamicsCrm {
 			$response = str_replace ( '</c:', '</', $response );
 			$response = str_replace ( '</s:', '</', $response );
 			$xml = simplexml_load_string ( $response );
-			
 			if (isset ( $xml->Body->Fault )) {
 				$Return->Error = True;
 				$Return->ErrorCode = ( string ) $xml->Body->Fault->faultcode;
@@ -827,7 +828,7 @@ class DynamicsCrm {
 				case 'option' :
 				case 'Option' :
 					$this->TestParameter ( $Param, 'value' );
-					$TxtAttribute .= '<c:value i:type="b:OptionSetValue"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					$TxtAttribute .= '<c:value i:type="b:OptionSetValue"><b:Value>' . $Param ['value'] . '</b:Value></c:value>';
 					break;
 				case 'Money' :
 				case 'money' :
