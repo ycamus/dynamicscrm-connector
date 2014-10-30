@@ -7,12 +7,12 @@
 
 var indexSectionsWithContent =
 {
-  0: "$_acdefgprstuw",
+  0: "$_abcdefgijklnprstuvwxz",
   1: "cd",
   2: "d",
-  3: "cdr",
-  4: "_acdefgprstuw",
-  5: "$",
+  3: "acdfjnprsv",
+  4: "_abcdefgiprstuwx",
+  5: "$abceijklpsvwz",
   6: "dt"
 };
 

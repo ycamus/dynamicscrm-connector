@@ -218,7 +218,7 @@ class DynamicsCrm {
 						</soap:Envelope>';
 		
 		// call
-		Return $this->call ( "Retrieve", $SoapEnvelope );
+		Return $this->call ( 'Retrieve', $SoapEnvelope );
 	}
 	
 	/**
@@ -287,7 +287,7 @@ class DynamicsCrm {
 						';
 		
 		// call
-		Return $this->call ( "RetrieveMultiple", $SoapEnvelope );
+		Return $this->call ( 'RetrieveMultiple', $SoapEnvelope );
 	}
 	
 	/**
@@ -319,7 +319,7 @@ class DynamicsCrm {
 								</soap:Body>
 						</soap:Envelope>';
 		// call
-		Return $this->call ( "Delete", $SoapEnvelope );
+		Return $this->call ( 'Delete', $SoapEnvelope );
 	}
 	
 	/**
@@ -428,10 +428,16 @@ class DynamicsCrm {
 	
 	
 	/**
-	 * @param unknown $Id
-	 * @param unknown $Table
-	 * @param unknown $StateCode
-	 * @param unknown $StatusCode
+	 * Set state for a newly created object (can't be done in create)
+	 * 
+	 * @param string $Id	<p>
+	 *        	the GUID of the entity you want to update
+	 *        	</p>
+	 * @param string $Table 	<p>
+	 *        	the table where you want to create a new row
+	 *        	</p>
+	 * @param string $StateCode 	State Code depending on Table
+	 * @param string $StatusCode 	Status Code depending on State Code
 	 * @return result|CrmResponse
 	 */
 	public function SetState($Id, $Table, $StateCode, $StatusCode) {
@@ -471,6 +477,8 @@ class DynamicsCrm {
 	
 	
 	/**
+	 * This is more of a test function return EVERY SINGLE ENTITY OF CRM
+	 * never ever run that in production...
 	 * @return result
 	 */
 	public function GetAllEntities() {
@@ -494,8 +502,14 @@ class DynamicsCrm {
 	}
 	
 	/**
-	 * @param unknown $EntityId
-	 * @param unknown $WorkflowId
+	 * Will run a workflow accordingly to the parameters
+	 * 
+	 * @param string $EntityId <p>
+	 *        	the GUID of the entity you want to run
+	 *        	</p>
+	 * @param string $WorkflowId <p>
+	 *        	the GUID of the Workflow you want to run 
+	 *        	</p>
 	 * @return result
 	 */
 	public function Workflow($EntityId, $WorkflowId) {
@@ -539,8 +553,64 @@ class DynamicsCrm {
 		return $this->call ( 'Associate', $SoapEnvelope );
 	}
 	
+	
+	/**
+	 * Will assign a new owner to an Crm object
+	 * @param string $Table <p>
+	 *        	the Table of the entity you want to update
+	 *        	</p>
+	 * @param string $Id <p>
+	 *        	the GUID of the entity you want to update
+	 *        	</p>
+	 * @param string $IdAssign 
+	 * 			<p>
+	 *        	the GUID that will be used as new owner
+	 *        	</p>
+	 * @param string $TypeAssign <p>
+	 *        	Not required set by default as systemuser,<br>
+	 *        someday could be of some use to set anything else
+	 *        	</p>
+	 */
+	public function Assign($Table,$Id,$IdAssign,$TypeAssign='systemuser'){
+		$Request = '<request i:type="b:AssignRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
+				<a:Parameters xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
+					<a:KeyValuePairOfstringanyType>
+						<c:key>Target</c:key>
+						<c:value i:type="a:EntityReference">
+							<a:Id>'.$Id.'</a:Id>
+							<a:LogicalName>'.$Table.'</a:LogicalName>
+							<a:Name i:nil="true" />
+						</c:value>
+					</a:KeyValuePairOfstringanyType>
+					<a:KeyValuePairOfstringanyType>
+						<c:key>Assignee</c:key>
+						<c:value i:type="a:EntityReference">
+							<a:Id>'.$IdAssign.'</a:Id>
+							<a:LogicalName>'.$TypeAssign.'</a:LogicalName>
+							<a:Name i:nil="true" />
+						</c:value>
+					</a:KeyValuePairOfstringanyType>
+				</a:Parameters>
+				<a:RequestId i:nil="true" />
+				<a:RequestName>Assign</a:RequestName>
+			</request>';
+		
+		$Response= $this->ExecuteBody ( $Request );
+		if(isset( $Response->Error) && $Response->Error===true){
+			return $Response;
+		}else{
+			$Return = new CrmResponse ();
+			$Return->Error = false;
+			$Return->ErrorCode = false;
+			$Return->ErrorMessage = '';
+			$Return->NbResult =1 ;
+			$Return->Result=true;
+		return  $Return;
+		}
+	}
 
 	/**
+	 * As It sounds will return the Logged in CRM user (login pwd wise)
 	 * @return object
 	 */
 	public function GetCurrentUserInfo() {
@@ -636,8 +706,8 @@ class DynamicsCrm {
 							$Return->Result = true;
 						} else {
 							$Return->Error = True;
-							$Return->ErrorCode = "Unknown Error";
-							$Return->ErrorMessage = "Unknown Error";
+							$Return->ErrorCode = 'Unknown Error';
+							$Return->ErrorMessage = 'Unknown Error';
 						}
 						Break;
 					case 'Execute' :
@@ -653,8 +723,8 @@ class DynamicsCrm {
 							$Return->Result = true;
 						} else {
 							$Return->Error = True;
-							$Return->ErrorCode = "Unknown Error";
-							$Return->ErrorMessage = "Unknown Error";
+							$Return->ErrorCode = 'Unknown Error';
+							$Return->ErrorMessage = 'Unknown Error';
 						}
 						Break;
 				}
@@ -703,7 +773,7 @@ class DynamicsCrm {
 	 * @return correct XML for Columns
 	 */
 	private function FormatFetchAttribute($Columns) {
-		$Attributes = "";
+		$Attributes = '';
 		if (is_array ( $Columns )) {
 			foreach ( $Columns as $column ) {
 				if (is_array ( $column )) {
@@ -784,7 +854,7 @@ class DynamicsCrm {
 	 * @return correct Attributes XML for insert/update/execute cases
 	 */
 	private function FormatAttributes($Params) {
-		$TxtAttribute = "";
+		$TxtAttribute = '';
 		
 		if (is_array ( $Params )) {
 			foreach ( $Params as $Param ) {
@@ -817,7 +887,7 @@ class DynamicsCrm {
 	 * @return correct Attribute XML for insert/update/execute cases
 	 */
 	private function FormatAttribute($Param) {
-		$TxtAttribute = "";
+		$TxtAttribute = '';
 		$this->TestParameters ( $Param, array('field','type') );
 		if (isset ( $Param ['field'] ) && isset ( $Param ['type'] )) {
 			$TxtAttribute .= '<b:KeyValuePairOfstringanyType>
@@ -866,8 +936,8 @@ class DynamicsCrm {
 				case 'entity' :
 					$this->TestParameter ( $Param, 'id','name' );
 					$TxtAttribute .= '<c:value i:type="b:EntityReference">
-												<b:Id>' . $Param ["id"] . '</b:Id>
-												<b:LogicalName>' . $Param ["name"] . '</b:LogicalName>
+												<b:Id>' . $Param ['id'] . '</b:Id>
+												<b:LogicalName>' . $Param ['name'] . '</b:LogicalName>
 												<b:Name i:nil="true" />
 												</c:value>';
 					break;
@@ -963,7 +1033,7 @@ class DynamicsCrm {
 		if ($Columns !== false && ! is_array ( $Columns )) {
 			throw new \InvalidArgumentException ( sprintf ( "Column Parameter  invalid : $Columns" ) );
 			}	
-		$AllCol = ($Columns == false) ? "true" : "false";
+		$AllCol = ($Columns == false) ? 'true' : 'false';
 		$TxtColumn = '<ser:columnSet><con:AllColumns>' . $AllCol . '</con:AllColumns><con:Columns>';
 		if ($Columns != false) {
 			foreach ( $Columns as $Column ) {
@@ -992,13 +1062,13 @@ class DynamicsCrm {
 	 * @return correct XML for this Order by
 	 */
 	private function FormatFetchOrder($Orders) {
-		$TxtOrder = "";
+		$TxtOrder = '';
 		if (is_array ( $Orders )) {
 			foreach ( $Orders as $Order ) {
 				$this->TestParameters ( $Order, array('Column','Order'));
 				if (isset ( $Order ['Column'] ) && isset ( $Order ['Order'] )) {
 					$TxtOrder .= "&lt;order attribute='" . $Order ['Column'] . "' descending='";
-					$TxtOrder .= ($Order ['Order'] == 'Asc') ? "false" : "true";
+					$TxtOrder .= ($Order ['Order'] == 'Asc') ? 'false' : 'true';
 					$TxtOrder .= "' /&gt;";
 				}
 			}
@@ -1049,7 +1119,7 @@ class DynamicsCrm {
 	 * @return correct XML for thoose filters
 	 */
 	private function FormatFetchFilter($Filters) {
-		$TxtFilter = "";
+		$TxtFilter = '';
 		if (is_array ( $Filters )) {
 			if (isset ( $Filters ['Type'] )) {
 				$TxtHead = "&lt;filter type='" . $Filters ['Type'] . "' &gt;";
@@ -1065,11 +1135,11 @@ class DynamicsCrm {
 					}
 				}
 			}
-			if($TxtFilter!=""){
+			if($TxtFilter!=''){
 			$TxtFilter=$TxtHead.$TxtFilter.'&lt;/filter &gt;';
 			return $TxtFilter;
-			}else return "";
-		} else	return "";
+			}else return '';
+		} else	return '';
 		
 	
 	}
@@ -1100,7 +1170,7 @@ class DynamicsCrm {
 	 */
 	private function FormatFetchJoin($Joins) {
 		// so we dont have to make a special statement for only 1 join
-		$TxtJoin = "";
+		$TxtJoin = '';
 		if (isset ( $Joins ['name'] )) {
 			$Joins = array (
 					'1' => $Joins 

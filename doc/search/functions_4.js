@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['executebody',['ExecuteBody',['../class_dynamics_crm.html#a4beece3b2935558ff6cb901e67d791f4',1,'DynamicsCrm']]]
+  ['delete',['Delete',['../class_dynamics_crm.html#a58888eac62274bcd328a2ae5e0583219',1,'DynamicsCrm']]]
 ];

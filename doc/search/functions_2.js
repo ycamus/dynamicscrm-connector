@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['call',['call',['../class_dynamics_crm.html#aa043a2f7618497b027467f98146c797a',1,'DynamicsCrm']]],
-  ['create',['Create',['../class_dynamics_crm.html#a8df3fd8412a483e61d8a44bdcfdfe5ed',1,'DynamicsCrm']]]
+  ['b',['b',['../jquery_8js.html#a2fa551895933fae935a0a6b87282241d',1,'jquery.js']]],
+  ['bh',['bh',['../jquery_8js.html#a6fc9115e5c9c910cae480abf0a8c7ae3',1,'jquery.js']]]
 ];
