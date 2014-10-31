@@ -205,7 +205,8 @@ class DynamicsCrm {
 	 *         </p>
 	 */
 	function Retrieve($Table, $Id, $Columns) {
-		
+		$this->TestGuid( $Id);
+				
 		// build Saop Enveloppe
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:con="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:arr="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
   						 <soap:Body>
@@ -308,6 +309,7 @@ class DynamicsCrm {
 	 *         </p>
 	 */
 	public function Delete($Table, $Id) {
+		$this->TestGuid( $Id);
 		// build soap Enveloppe
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
 							<soap:Header/>
@@ -352,6 +354,7 @@ class DynamicsCrm {
 		} catch ( Exception $e ) {
 			return $this->GetErrorObject ( $e->getMessage () );
 		}
+		$this->TestGuid( $Id);
 		// build soap Enveloppe
 		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
 							<soap:Body><Update xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
@@ -442,7 +445,7 @@ class DynamicsCrm {
 	 */
 	public function SetState($Id, $Table, $StateCode, $StatusCode) {
 		if (isset ( $this->StateCheck [$Table] [$StateCode] ) && in_array ( $StatusCode, $this->StateCheck [$Table] [$StateCode] )) {
-			
+			$this->TestGuid( $Id);
 			$Request = '<request i:type="b:SetStateRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
        <a:Parameters xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
          <a:KeyValuePairOfstringanyType>
@@ -513,6 +516,8 @@ class DynamicsCrm {
 	 * @return result
 	 */
 	public function Workflow($EntityId, $WorkflowId) {
+		$this->TestGuid( $EntityId);
+		$this->TestGuid( $WorkflowId);
 		$Request = '<request i:type="b:ExecuteWorkflowRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
 					<a:Parameters xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
 					<a:KeyValuePairOfstringanyType>
@@ -572,6 +577,8 @@ class DynamicsCrm {
 	 *        	</p>
 	 */
 	public function Assign($Table,$Id,$IdAssign,$TypeAssign='systemuser'){
+		$this->TestGuid( $Id);
+		$this->TestGuid( $IdAssign);
 		$Request = '<request i:type="b:AssignRequest" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:b="http://schemas.microsoft.com/crm/2011/Contracts">
 				<a:Parameters xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
 					<a:KeyValuePairOfstringanyType>
@@ -666,6 +673,9 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_HTTPAUTH, CURLAUTH_NTLM );
 		curl_setopt ( $ch, CURLOPT_USERPWD, $this->user . ':' . $this->password );
 		$response = curl_exec ( $ch );
+		die(print_r($response));
+		
+		
 		$Return = new CrmResponse ();
 		if ($response === false) {
 			$Return->Error = True;
@@ -683,7 +693,7 @@ class DynamicsCrm {
 			$response = str_replace ( '</c:', '</', $response );
 			$response = str_replace ( '</s:', '</', $response );
 			$xml = simplexml_load_string ( $response );
-			if (isset ( $xml->Body->Fault )) {
+						if (isset ( $xml->Body->Fault )) {
 				$Return->Error = True;
 				$Return->ErrorCode = ( string ) $xml->Body->Fault->faultcode;
 				$Return->ErrorMessage = ( string ) $xml->Body->Fault->faultstring;
@@ -905,6 +915,23 @@ class DynamicsCrm {
 					$this->TestParameter ( $Param, 'value' );
 					$TxtAttribute .= '<c:value i:type="b:Money"><b:value>' . $Param ['value'] . '</b:value></c:value>';
 					break;
+				case 'double' :
+				case 'Double' :
+				case 'Float' :
+				case 'float' :
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="b:double"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					break;
+				case 'decimal':
+				case 'Decimal':
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="b:decimal"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					break;
+				case 'long':
+				case 'Long':
+					$this->TestParameter ( $Param, 'value' );
+					$TxtAttribute .= '<c:value i:type="b:long"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					break;
 				case 'Boolean' :
 				case 'boolean' :
 				case 'bool' :
@@ -934,7 +961,8 @@ class DynamicsCrm {
 				case 'entityreference' :
 				case 'Entity' :
 				case 'entity' :
-					$this->TestParameter ( $Param, 'id','name' );
+					$this->TestParameters ( $Param, array('id','name') );
+					$this->TestGuid($Param ['id'],$Param);
 					$TxtAttribute .= '<c:value i:type="b:EntityReference">
 												<b:Id>' . $Param ['id'] . '</b:Id>
 												<b:LogicalName>' . $Param ['name'] . '</b:LogicalName>
@@ -991,6 +1019,18 @@ class DynamicsCrm {
 		if (! isset ( $Param [$field] )) {
 			$strArray = print_r ( $Param, true );
 			throw new \InvalidArgumentException ( sprintf ( "Missing Parameter $field for array : $strArray" ) );
+		}
+	}
+	
+	private function TestGuid($Guid,$Param=false){
+		if(!preg_match("/^(\{)?[a-f\d]{8}(-[a-f\d]{4}){4}[a-f\d]{8}(?(1)\})$/i", $Guid)){
+			if ($Param){
+				$strArray = print_r ( $Param, true );
+				throw new \InvalidArgumentException ( sprintf ( "'$Guid' is not a Valid Guid in array : $strArray" ) );
+			}else{
+				throw new \InvalidArgumentException ( sprintf ( "'$Guid' is not a Valid Guid" ) );
+			}
+			
 		}
 	}
 	
