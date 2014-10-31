@@ -673,7 +673,7 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_HTTPAUTH, CURLAUTH_NTLM );
 		curl_setopt ( $ch, CURLOPT_USERPWD, $this->user . ':' . $this->password );
 		$response = curl_exec ( $ch );
-		die(print_r($response));
+
 		
 		
 		$Return = new CrmResponse ();
@@ -920,17 +920,17 @@ class DynamicsCrm {
 				case 'Float' :
 				case 'float' :
 					$this->TestParameter ( $Param, 'value' );
-					$TxtAttribute .= '<c:value i:type="b:double"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					$TxtAttribute .= '<c:value i:type="d:double" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
 					break;
 				case 'decimal':
 				case 'Decimal':
 					$this->TestParameter ( $Param, 'value' );
-					$TxtAttribute .= '<c:value i:type="b:decimal"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					$TxtAttribute .= '<c:value i:type="d:decimal" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
 					break;
 				case 'long':
 				case 'Long':
 					$this->TestParameter ( $Param, 'value' );
-					$TxtAttribute .= '<c:value i:type="b:long"><b:value>' . $Param ['value'] . '</b:value></c:value>';
+					$TxtAttribute .= '<c:value i:type="d:long" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
 					break;
 				case 'Boolean' :
 				case 'boolean' :
