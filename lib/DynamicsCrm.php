@@ -696,7 +696,11 @@ class DynamicsCrm {
 						if (isset ( $xml->Body->Fault )) {
 				$Return->Error = True;
 				$Return->ErrorCode = ( string ) $xml->Body->Fault->faultcode;
-				$Return->ErrorMessage = ( string ) $xml->Body->Fault->faultstring;
+				
+				$Return->ErrorMessage = (string) $xml->Body->Fault->faultstring;
+				if (isset($xml->Body->Fault->detail->OrganizationServiceFault)){
+				$Return->ErrorMessage .='<br>Détail : '.$this->getErrorMessage($xml->Body->Fault->detail->OrganizationServiceFault);
+				};
 				$Return->Result = False;
 			} else {
 				switch ($operation) {
@@ -742,6 +746,13 @@ class DynamicsCrm {
 		}
 		
 		return $Return;
+	}
+	
+	private function getErrorMessage($Xml){
+		if (isset($Xml->InnerFault->Message) && isset($Xml->InnerFault->InnerFault) ) return $this-> getErrorMessage($Xml->InnerFault);
+		else{
+			if (isset($Xml->Message)) return (string) $Xml->Message;
+		}
 	}
 	
 	/**
