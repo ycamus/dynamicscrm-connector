@@ -274,7 +274,7 @@ class DynamicsCrm {
 				    			<RetrieveMultiple xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
 				      				<query i:type="a:FetchExpression" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts">
 				       					 <a:Query>
-												&lt;fetch version=\'1.0\' output-format=\'xml-platform\' mapping=\'logical\' aggregate=\'' . $Aggregate . '\' distinct=\'false\'&gt;';
+												&lt;fetch version=\'1.0\' output-format=\'xml-platform\' mapping=\'logical\' aggregate=\'' . $Aggregate . '\' distinct=\'false\' page=\'1\' count=\'5000\' &gt;';
 		$SoapEnvelope.=$Entity.$Attributes.$Order.$Filter.$Join;
 	
 		// add footer
@@ -659,7 +659,7 @@ class DynamicsCrm {
 	 *        	Soap body request according to the Action
 	 * @return result parsed and in an CrmResponse Object according to action
 	 */
-	private function call($operation, $soapBody) {
+	private function call($operation, $soapBody,$page=1,$Return =false) {
 		$headers = $this->GenerateSoapHeader ( $operation );
 		
 		$ch = curl_init ();
@@ -674,14 +674,19 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_USERPWD, $this->user . ':' . $this->password );
 		$response = curl_exec ( $ch );
 
+	
+		if ($Return===false){
 		
+			$Return = new CrmResponse ();
+		}
+	
 		
-		$Return = new CrmResponse ();
 		if ($response === false) {
 			$Return->Error = True;
 			$Return->ErrorCode = 0;
 			$Return->ErrorMessage = curl_error ( $ch );
 			$Return->Result = False;
+			$Return->MoreRecords=false;
 		} else {
 			
 			$response = str_replace ( '<a:', '<', $response );
@@ -693,7 +698,18 @@ class DynamicsCrm {
 			$response = str_replace ( '</c:', '</', $response );
 			$response = str_replace ( '</s:', '</', $response );
 			$xml = simplexml_load_string ( $response );
-						if (isset ( $xml->Body->Fault )) {
+			$tmpxml=$xml->Body->RetrieveMultipleResponse;
+			$BoolMoreRecords=false;
+			foreach($tmpxml->children() as $child) {
+			 foreach($child as $key => $value) {
+			 if($key=='MoreRecords'){
+			 	$BoolMoreRecords=((string)$value)=='true'?true:false;
+			 break;
+			 }
+			 }
+			 }
+			$Return->MoreRecords =$BoolMoreRecords;
+				if (isset ( $xml->Body->Fault )) {
 				$Return->Error = True;
 				$Return->ErrorCode = ( string ) $xml->Body->Fault->faultcode;
 				
@@ -706,6 +722,13 @@ class DynamicsCrm {
 				switch ($operation) {
 					case 'RetrieveMultiple' :
 						$Return = $this->ParseRetrieveMultiple ( $xml, $Return );
+						if($Return->MoreRecords===true){
+						$new_index=$page+1;
+						$soapBody=str_ireplace("page='".(string) $page."'", "page='".(string)$new_index."'", $soapBody);
+						
+						$Return =$this->call($operation, $soapBody,$new_index,$Return ); 
+						
+						}
 						Break;
 					case 'Retrieve' :
 						$Return = $this->ParseRetrieve ( $xml, $Return );
@@ -744,7 +767,6 @@ class DynamicsCrm {
 				}
 			}
 		}
-		
 		return $Return;
 	}
 	
@@ -822,6 +844,9 @@ class DynamicsCrm {
 									$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' groupby='true' /&gt;";
 								}
 							}
+						}else{
+							$Attributes .= "&lt;attribute name='" . $column ['name'] . "' alias='" . $column ['alias'] . "' /&gt;";
+								
 						}
 						// normal cases
 					}
@@ -1033,7 +1058,7 @@ class DynamicsCrm {
 		}
 	}
 	
-	private function TestGuid($Guid,$Param=false){
+	public function TestGuid($Guid,$Param=false){
 		if(!preg_match("/^(\{)?[a-f\d]{8}(-[a-f\d]{4}){4}[a-f\d]{8}(?(1)\})$/i", $Guid)){
 			if ($Param){
 				$strArray = print_r ( $Param, true );
@@ -1339,8 +1364,9 @@ class DynamicsCrm {
 	 * @return Object CrmResponse
 	 */
 	private function ParseDatas($Datas, $Return) {
-		$NbResults = 0;
-		$Results = array ();
+		$NbResults = $Return->NbResult;
+		if($NbResults>0)$Results=$Return->Result;
+		else $Results = array ();
 		foreach ( $Datas as $Data ) {
 			$ResultLine = $this->ParseResultLine ( $Data );
 			$Results [$NbResults] = $ResultLine;
@@ -1369,12 +1395,25 @@ class DynamicsCrm {
 				}
 			}
 		} else {
-			
 			foreach ( $Data as $data ) {
 				if (isset ( $data->key )) {
 					$key = str_ireplace ( '.', '_', $data->key );
 					$ResultLine->$key = $this->ParseKeyPair ( $data );
 				}
+			}
+		}
+		
+		 if (isset ( $Data->FormattedValues )) {
+		 	foreach ( $Data->FormattedValues as $keypair ) {
+				foreach ( $keypair->KeyValuePairOfstringstring as $data ) {
+					$key = str_ireplace ( '.', '_', $data->key );
+					$Option=new \stdClass ();
+					$Option->Value=$ResultLine->$key;
+					$Option->Text=$this->ParseKeyPair ( $data );
+					unset($ResultLine->$key);
+					$ResultLine->$key=$Option;
+					}
+					
 			}
 		}
 		return $ResultLine;
@@ -1385,27 +1424,34 @@ class DynamicsCrm {
 	 * @return number|boolean|Ambigous <string, multitype:string , multitype:stdClass >|Ambigous <multitype:string , string, multitype:stdClass >
 	 */
 	private function ParseKeyPair($data) {
-		// liason simple
-		if (isset ( $data->value->Value )) {
+	if (isset($data->value->Value->LogicalName)){
+			$value = array (
+					'Value' => ( string )$data->value->Value->Id,
+					'logicalname' => ( string ) $data->value->Value->LogicalName,
+					'Text' => ( string ) $data->value->Value->Name 
+			);
+		}elseif (isset ( $data->value->Value->Value )) {
+			$value = ( string ) $data->value->Value->Value;
+			// entité logique
+		}elseif (isset ( $data->value->Value )) {
 			$value = ( string ) $data->value->Value;
 			// entité logique
-		} else if (isset ( $data->value->LogicalName )) {
+		}elseif (isset ( $data->value->LogicalName )) {
 			$value = array (
-					'id' => ( string ) $data->value->Id,
+					'Value' => ( string ) $data->value->Id,
 					'logicalname' => ( string ) $data->value->LogicalName,
-					'name' => ( string ) $data->value->Name 
+					'Text' => ( string ) $data->value->Name 
 			);
 		} else if (isset ( $data->value->Entities )) {
 			$Entities = array ();
-			foreach ( $data->value->Entities as $entity ) {
-				if (isset ( $entity->Entity->Attributes )) {
-					$Entities [] = $this->ParseResultLine ( $entity->Entity );
+			foreach ( $data->value->Entities->Entity as $entity ) {
+				if (isset ( $entity->Attributes )) {
+					$Entities [] = $this->ParseResultLine ( $entity );
 				}
 			}
 			
 			$value = $Entities;
-		} else
-			$value = ( string ) $data->value;
+		} else	$value = ( string ) $data->value;
 		
 		if (! is_array ( $value )) {
 			if (ctype_digit ( $value )) {
