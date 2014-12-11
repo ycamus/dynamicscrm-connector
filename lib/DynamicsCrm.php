@@ -700,6 +700,7 @@ class DynamicsCrm {
 			$xml = simplexml_load_string ( $response );
 			$tmpxml=$xml->Body->RetrieveMultipleResponse;
 			$BoolMoreRecords=false;
+			if(!empty($tmpxml) && $tmpxml->count()>0 ){
 			foreach($tmpxml->children() as $child) {
 			 foreach($child as $key => $value) {
 			 if($key=='MoreRecords'){
@@ -708,6 +709,7 @@ class DynamicsCrm {
 			 }
 			 }
 			 }
+			 }else $BoolMoreRecords=false;
 			$Return->MoreRecords =$BoolMoreRecords;
 				if (isset ( $xml->Body->Fault )) {
 				$Return->Error = True;
