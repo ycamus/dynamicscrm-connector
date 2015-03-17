@@ -1,5 +1,9 @@
 <?php
 use Symfony\Component\HttpFoundation\HeaderBag;
+use MyProject\Proxies\__CG__\OtherProject\Proxies\__CG__\stdClass;
+use connector\lib\Builder\RequestBuilder;
+
+
 /*
  * ! \mainpage DynamicsCrm
  *
@@ -69,6 +73,7 @@ class DynamicsCrm {
 	var $serv_adress;
 	var $user;
 	var $password;
+	private $RequestBuilder;
 	private $StateCheck=array(
 			'account'=>array('0'=>array('1'),'1'=>array('2')),
 			'activitypointer'=>array('0'=>array('1'),'1'=>array('2'),'2'=>array('3'),'3'=>array('4')),
@@ -125,10 +130,31 @@ class DynamicsCrm {
 	 * @param string $password
 	 *        	Dynamics CRM connection's password
 	 */
-	function __construct($serv_adress, $user, $password) {
+		function __construct($serv_adress, $user, $password,$Adfs=false) {
 		$this->setServAdress ( $serv_adress );
 		$this->setUser ( $user );
 		$this->setPassword ( $password );
+		
+		$domHelper=new \DOMHelper();
+		$TimeHelper=new \TimeHelper();
+		$SoapRequester= new \SoapRequester();
+		$entityToDomConverter= new \EntityToDomConverter($domHelper);
+		$RequestBuilder= new \RequestBuilder($domHelper, $TimeHelper, $entityToDomConverter);
+		if($Adfs){
+			$SecurityService=new \SecurityService($RequestBuilder,$SoapRequester);
+			$DiscoveryUrl=$this->getServAdress().'XRMServices/2011/Discovery.svc';
+			$securityToken=$SecurityService->login($Adfs, $this->getServAdress(), $DiscoveryUrl, $this->getUser(), $this->getPassword());
+			$this->RequestBuilder=$RequestBuilder->setServer($this->getServAdress())
+			->setCrm($this->getServAdress())
+			->setOrganization('false')->setUsername($this->getUser())->setPassword($this->getPassword())->setSecurityToken($securityToken);;
+		}else {
+			$this->RequestBuilder=$RequestBuilder->setServer($this->getServAdress())
+			->setCrm($this->getServAdress())
+			->setOrganization('false')->setUsername($this->getUser())->setPassword($this->getPassword())->setNtlm(true);
+				}
+		
+		
+		
 	}
 	
 	/**
@@ -206,22 +232,34 @@ class DynamicsCrm {
 	 */
 	function Retrieve($Table, $Id, $Columns) {
 		$this->TestGuid( $Id);
-				
-		// build Saop Enveloppe
-		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:con="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:arr="http://schemas.microsoft.com/2003/10/Serialization/Arrays">
-  						 <soap:Body>
-      						<ser:Retrieve>
-         							<ser:entityName>' . $Table . '</ser:entityName>
-         							<ser:id>' . $Id . '</ser:id>';
-		$SoapEnvelope .= $this->FormatColumn ( $Columns );
-		$SoapEnvelope .= '</ser:Retrieve>
-						   </soap:Body>
-						</soap:Envelope>';
+
+		$request = new \GenericRequest($this->RequestBuilder,'Retrieve');
+		$enveloppe=$request->getEmptyEnveloppe();
+		$enveloppe=str_ireplace("</s:envelope>", "", $enveloppe);
+		$SoapRequester= new \SoapRequester();
 		
-		// call
-		Return $this->call ( 'Retrieve', $SoapEnvelope );
+		$enveloppe.='<s:Body xmlns:default="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
+				<default:Retrieve xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
+		<entityName>'.$Table.'</entityName>
+		<id>'.$Id.'</id>'.
+		$this->FormatColumn ( $Columns ).'</default:Retrieve></s:Body></s:Envelope>';
+
+		$Response=$SoapRequester->sendRequest($request, $enveloppe);
+		if(is_object ($Response)){
+			return $Response;
+		}else{
+			$RetrieveXml=$this->responseToXml($Response);
+			$ObjectRetrieve= new CrmResponse();
+			$ObjectRetrieve=$this->TestReturn($RetrieveXml, $ObjectRetrieve);
+			if($ObjectRetrieve->Error) return $ObjectRetrieve;
+			$ObjectRetrieve=$this->ParseRetrieve($RetrieveXml, $ObjectRetrieve);
+			Return  $ObjectRetrieve;
+		}
 	}
 	
+	
+	
+
 	/**
 	 * Retrieve Multiple Lines in CRM
 	 *
@@ -248,6 +286,11 @@ class DynamicsCrm {
 	 *         </p>
 	 */
 	public function RetrieveMultiple($Table, $Where, $Columns=false, $Join = false, $Order = false) {
+		
+		$request = new \GenericRequest($this->RequestBuilder,'RetrieveMultiple');
+		$enveloppe=$request->getEmptyEnveloppe();
+		$enveloppe=str_ireplace("</s:envelope>", "", $enveloppe);
+		
 		// check if there is some agregate inside parameter
 		if (is_array ( $Columns )) {
 			if ($this->array_key_exists_r ( 'aggregate', $Columns ) || $this->array_key_exists_r ( 'groupby', $Columns )) {
@@ -269,9 +312,9 @@ class DynamicsCrm {
 				return $this->GetErrorObject ( $e->getMessage () );
 			}
 		
-		$SoapEnvelope = '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-				 			 <s:Body>
-				    			<RetrieveMultiple xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+		$SoapEnvelope = '
+			<s:Body xmlns:default="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
+				<default:RetrieveMultiple xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
 				      				<query i:type="a:FetchExpression" xmlns:a="http://schemas.microsoft.com/xrm/2011/Contracts">
 				       					 <a:Query>
 												&lt;fetch version=\'1.0\' output-format=\'xml-platform\' mapping=\'logical\' aggregate=\'' . $Aggregate . '\' distinct=\'false\' page=\'1\' count=\'5000\' &gt;';
@@ -282,13 +325,46 @@ class DynamicsCrm {
 				                               &lt;/fetch&gt;
 				</a:Query>
 				   	                </query>
-				   		        </RetrieveMultiple>
+				   		        </default:RetrieveMultiple>
 					  	      </s:Body>
 						</s:Envelope>
 						';
-		
-		// call
-		Return $this->call ( 'RetrieveMultiple', $SoapEnvelope );
+
+		return $this->CallRetriveMultiple($request,$enveloppe.$SoapEnvelope);
+	}
+	
+	private function CallRetriveMultiple($Request,$SoapRequest,$page=1,$ObjectRetrieveMultiple=false){
+		$SoapRequester= new \SoapRequester($this->RequestBuilder);
+		$Response= $SoapRequester->sendRequest($Request, $SoapRequest);
+		if(is_object ($Response)){
+			return $Response;
+		}else{
+			$RetrieveXmlMultiple=$this->responseToXml($Response);
+			if (isset ( $RetrieveXmlMultiple->Body->Fault )) {
+				return $this->GetCrmError($RetrieveXmlMultiple);
+			}else{
+				if($ObjectRetrieveMultiple===false){
+				$ObjectRetrieveMultiple= new CrmResponse();
+				}
+				$BoolMoreRecords=false;
+				foreach($RetrieveXmlMultiple->Body->RetrieveMultipleResponse->children() as $child) {
+					foreach($child as $key => $value) {
+						if($key=='MoreRecords'){
+							$BoolMoreRecords=((string)$value)=='true'?true:false;
+							break;
+						}
+					}
+				}
+				$ObjectRetrieveMultiple->MoreRecords=$BoolMoreRecords;
+				$ObjectRetrieveMultiple=$this->ParseRetrieveMultiple($RetrieveXmlMultiple, $ObjectRetrieveMultiple);
+				if($ObjectRetrieveMultiple->MoreRecords===true){
+					$new_index=$page+1;
+					$SoapRequest=str_ireplace("page='".(string) $page."'", "page='".(string)$new_index."'", $SoapRequest);
+					$ObjectRetrieveMultiple=$this->CallRetriveMultiple($Request,$SoapRequest,$new_index,$ObjectRetrieveMultiple);
+				}
+				Return  $ObjectRetrieveMultiple;
+			}
+		}
 	}
 	
 	/**
@@ -355,9 +431,14 @@ class DynamicsCrm {
 			return $this->GetErrorObject ( $e->getMessage () );
 		}
 		$this->TestGuid( $Id);
+		
+		$request = new \GenericRequest($this->RequestBuilder,'Update');
+		$enveloppe=$request->getEmptyEnveloppe();
+		$enveloppe=str_ireplace("</s:envelope>", "", $enveloppe);
+		$SoapRequester= new \SoapRequester();
 		// build soap Enveloppe
-		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-							<soap:Body><Update xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
+		$SoapEnvelope = '
+							<s:Body><Update xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
             <entity xmlns:b="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
                     <b:Attributes xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
                        ' . $Param . '
@@ -368,10 +449,10 @@ class DynamicsCrm {
                     <b:LogicalName>' . $Table . '</b:LogicalName>
                     <b:RelatedEntities xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic"/>
                 </entity></Update>
-            </soap:Body>
-        </soap:Envelope>';
+            </s:Body>
+        </s:Envelope>';
 		// call
-		return $this->call ( 'Update', $SoapEnvelope );
+			Return  $SoapRequester->sendRequest($request->getTo(), $enveloppe.$SoapEnvelope);
 	}
 	
 	/**
@@ -412,8 +493,12 @@ class DynamicsCrm {
 		} catch ( Exception $e ) {
 			return $this->GetErrorObject ( $e->getMessage () );
 		}
-		$SoapEnvelope = '<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-							<soap:Body>
+
+		$request = new \GenericRequest($this->RequestBuilder,'Create');
+		$enveloppe=$request->getEmptyEnveloppe();
+		$enveloppe=str_ireplace("</s:envelope>", "", $enveloppe);
+		$SoapRequester= new \SoapRequester();
+		$SoapEnvelope = '<s:Body>
 				<Create xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services">
             <entity xmlns:b="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
                     <b:Attributes xmlns:c="http://schemas.datacontract.org/2004/07/System.Collections.Generic">
@@ -424,9 +509,10 @@ class DynamicsCrm {
                         <b:Id>00000000-0000-0000-0000-000000000000</b:Id>
                         <b:LogicalName>' . $Table . '</b:LogicalName>
                         <b:RelatedEntities />
-                </entity></Create></soap:Body>
-        </soap:Envelope>';
-		return $this->call ( 'Create', $SoapEnvelope );
+                </entity></Create></s:Body>
+        </s:Envelope>';
+			Return  $SoapRequester->sendRequest($request, $enveloppe.$SoapEnvelope);
+		
 	}
 	
 	
@@ -640,14 +726,20 @@ class DynamicsCrm {
 	 * @return result parsed and in an CrmResponse Object according to action
 	 */
 	private function ExecuteBody($Request) {
-		$SoapEnvelope = '<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
-				 			 <s:Body>
+		$request = new \GenericRequest($this->RequestBuilder,'Execute');
+		$enveloppe=$request->getEmptyEnveloppe();
+		$enveloppe=str_ireplace("</s:envelope>", "", $enveloppe);
+		$SoapRequester= new \SoapRequester();
+		
+		$enveloppe.='<s:Body>
 				   				 <Execute xmlns="http://schemas.microsoft.com/xrm/2011/Contracts/Services" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
              			 			' . $Request . '
               					</Execute>
-							</s:Body>
-						</s:Envelope>';
-		return $this->call ( 'Execute', $SoapEnvelope );
+							</s:Body></s:Envelope>';
+		
+		$Response=$SoapRequester->sendRequest($request, $enveloppe);
+		// call
+		Return  $this->responseToXml($Response);
 	}
 	
 	/**
@@ -668,13 +760,16 @@ class DynamicsCrm {
 		curl_setopt ( $ch, CURLOPT_HTTPHEADER, $headers );
 		curl_setopt ( $ch, CURLOPT_UNRESTRICTED_AUTH,true);
 		curl_setopt ( $ch, CURLOPT_FOLLOWLOCATION,true);
+		if (preg_match('`^https://`i',$this->serv_adress))
+		{
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+		}
 		curl_setopt ( $ch, CURLOPT_POST, true );
 		curl_setopt ( $ch, CURLOPT_POSTFIELDS, $soapBody );
 		curl_setopt ( $ch, CURLOPT_HTTPAUTH, CURLAUTH_NTLM );
 		curl_setopt ( $ch, CURLOPT_USERPWD, $this->user . ':' . $this->password );
 		$response = curl_exec ( $ch );
-
-	
 		if ($Return===false){
 		
 			$Return = new CrmResponse ();
@@ -700,27 +795,26 @@ class DynamicsCrm {
 			$xml = simplexml_load_string ( $response );
 			$tmpxml=$xml->Body->RetrieveMultipleResponse;
 			$BoolMoreRecords=false;
-			if(!empty($tmpxml) && $tmpxml->count()>0 ){
-			foreach($tmpxml->children() as $child) {
-			 foreach($child as $key => $value) {
-			 if($key=='MoreRecords'){
-			 	$BoolMoreRecords=((string)$value)=='true'?true:false;
-			 break;
-			 }
-			 }
-			 }
-			 }else $BoolMoreRecords=false;
-			$Return->MoreRecords =$BoolMoreRecords;
+			
 				if (isset ( $xml->Body->Fault )) {
 				$Return->Error = True;
 				$Return->ErrorCode = ( string ) $xml->Body->Fault->faultcode;
 				
 				$Return->ErrorMessage = (string) $xml->Body->Fault->faultstring;
 				if (isset($xml->Body->Fault->detail->OrganizationServiceFault)){
-				$Return->ErrorMessage .='<br>Détail : '.$this->getErrorMessage($xml->Body->Fault->detail->OrganizationServiceFault);
+				$Return->ErrorMessage .='<br>Dï¿½tail : '.$this->getErrorMessage($xml->Body->Fault->detail->OrganizationServiceFault);
 				};
 				$Return->Result = False;
 			} else {
+				foreach($tmpxml->children() as $child) {
+					foreach($child as $key => $value) {
+						if($key=='MoreRecords'){
+							$BoolMoreRecords=((string)$value)=='true'?true:false;
+							break;
+						}
+					}
+				}
+				$Return->MoreRecords =$BoolMoreRecords;
 				switch ($operation) {
 					case 'RetrieveMultiple' :
 						$Return = $this->ParseRetrieveMultiple ( $xml, $Return );
@@ -1111,14 +1205,19 @@ class DynamicsCrm {
 		if ($Columns !== false && ! is_array ( $Columns )) {
 			throw new \InvalidArgumentException ( sprintf ( "Column Parameter  invalid : $Columns" ) );
 			}	
-		$AllCol = ($Columns == false) ? 'true' : 'false';
-		$TxtColumn = '<ser:columnSet><con:AllColumns>' . $AllCol . '</con:AllColumns><con:Columns>';
-		if ($Columns != false) {
+			$TxtColumn = '<columnSet xmlns:b="http://schemas.microsoft.com/xrm/2011/Contracts" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">';
+
+		if ($Columns == false){
+		$TxtColumn.='<b:AllColumns>true</b:AllColumns>';
+		}else{
+		$TxtColumn .='<b:Columns xmlns:c="http://schemas.microsoft.com/2003/10/Serialization/Arrays">';
+	
 			foreach ( $Columns as $Column ) {
-				$TxtColumn .= '<arr:string>' . $Column . '</arr:string>';
+				$TxtColumn .= '<c:string>' . $Column . '</c:string>';
 			}
+			$TxtColumn .='</b:Columns>';
 		}
-		$TxtColumn .= '</con:Columns></ser:columnSet>';
+		$TxtColumn .= '</columnSet>';
 		return $TxtColumn;
 	}
 	
@@ -1434,10 +1533,10 @@ class DynamicsCrm {
 			);
 		}elseif (isset ( $data->value->Value->Value )) {
 			$value = ( string ) $data->value->Value->Value;
-			// entité logique
+			// entitï¿½ logique
 		}elseif (isset ( $data->value->Value )) {
 			$value = ( string ) $data->value->Value;
-			// entité logique
+			// entitï¿½ logique
 		}elseif (isset ( $data->value->LogicalName )) {
 			$value = array (
 					'Value' => ( string ) $data->value->Id,
@@ -1525,4 +1624,31 @@ class DynamicsCrm {
 		}
 		return $result;
 	}
+	
+	/**
+	 * Convert CRM response to a simple XML object
+	 *
+	 * @param $Response CRM response
+	 * @return XMLObject $ResponseXml
+	 */
+   private function responseToXml($Response){
+		$MarkupToReplace = array('<a:', '<b:', '<c:','<s:', '</a:', '</b:','</c:', '</s:');
+		$MarkupCorrected   = array('<', '<', '<','<', '</', '</','</', '</');
+		$Response = str_replace($MarkupToReplace, $MarkupCorrected, $Response);
+		$ResponseXml = simplexml_load_string ( $Response );
+	return $ResponseXml;
+   }	
+   
+   private function GetCrmError($xml){
+			$CrmError=new CrmResponse();
+		   	$CrmError->Error = True;
+		   	$CrmError->ErrorCode = ( string ) $xml->Body->Fault->faultcode;
+		   
+		   	$CrmError->ErrorMessage = (string) $xml->Body->Fault->faultstring;
+		   	if (isset($xml->Body->Fault->detail->OrganizationServiceFault)){
+		   		$CrmError->ErrorMessage .='<br>DÃ©tail : '.$this->getErrorMessage($xml->Body->Fault->detail->OrganizationServiceFault);
+		   	};
+		   	$CrmError->Result = False;
+		 	return $CrmError;
+   }
 }
