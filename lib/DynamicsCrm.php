@@ -140,7 +140,7 @@ class DynamicsCrm {
 		$SoapRequester= new \SoapRequester();
 		$entityToDomConverter= new \EntityToDomConverter($domHelper);
 		$RequestBuilder= new \RequestBuilder($domHelper, $TimeHelper, $entityToDomConverter);
-		if($Adfs){
+		if($Adfs!==false){
 			$SecurityService=new \SecurityService($RequestBuilder,$SoapRequester);
 			$DiscoveryUrl=$this->getServAdress().'XRMServices/2011/Discovery.svc';
 			$securityToken=$SecurityService->login($Adfs, $this->getServAdress(), $DiscoveryUrl, $this->getUser(), $this->getPassword());
@@ -511,8 +511,23 @@ class DynamicsCrm {
                         <b:RelatedEntities />
                 </entity></Create></s:Body>
         </s:Envelope>';
-			Return  $SoapRequester->sendRequest($request, $enveloppe.$SoapEnvelope);
-		
+			$Result=  $SoapRequester->sendRequest($request, $enveloppe.$SoapEnvelope);
+			if(!is_object($Result)){
+				$Return = new \CrmResponse();
+				$xml = $this->getXml($Result);
+				if(isset($xml->Body->CreateResponse->CreateResult)){
+					
+					$Return->Error = false;
+					$Return->NbResult = 1;
+					$Return->Result = ( string ) $xml->Body->CreateResponse->CreateResult;
+				}else{
+						$Return->Error = true;
+					$Return->NbResult =0;
+					$Return->Result = ( string ) $Result;
+	
+				}
+			Return $Return;
+			}else Return $Result;
 	}
 	
 	
@@ -1181,7 +1196,7 @@ class DynamicsCrm {
 	 * @param unknown $message
 	 * @return CrmResponse
 	 */
-	private function GetErrorObject($message) {
+	public function GetErrorObject($message) {
 		$Return = new CrmResponse ();
 		$Return->Error = True;
 		$Return->ErrorCode = 0;
@@ -1650,5 +1665,18 @@ class DynamicsCrm {
 		   	};
 		   	$CrmError->Result = False;
 		 	return $CrmError;
+   }
+   
+   private function getXml($Xml){
+   	$Xml = str_replace ( '<a:', '<', $Xml );
+   	$Xml = str_replace ( '<b:', '<', $Xml );
+   	$Xml = str_replace ( '<c:', '<', $Xml );
+   	$Xml = str_replace ( '<s:', '<', $Xml );
+   	$Xml = str_replace ( '</a:', '</', $Xml );
+   	$Xml = str_replace ( '</b:', '</', $Xml );
+   	$Xml = str_replace ( '</c:', '</', $Xml );
+   	$Xml = str_replace ( '</s:', '</', $Xml );
+   	$Xml = simplexml_load_string ( $Xml );
+   	return $Xml;
    }
 }

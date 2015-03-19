@@ -47,7 +47,7 @@ class SoapRequester
     {
     	$this->Request=$Request;
     	if($this->Request->isNtlm()){
-    		$headers = $this->getNtlmHeaders('RetrieveMultiple');
+    		$headers = $this->getNtlmHeaders($Request->getAction());
         $ch = $this->getCurlNtlmHandle($this->Request, $headers, $SoapBody);
     	}else{
     		$headers = $this->getHeaders($this->Request->getTo(), $SoapBody);
@@ -109,7 +109,7 @@ class SoapRequester
     			'Connection: Keep-Alive',
     			'User-Agent: PHP-SOAP-CURL',
     			'Content-Type: text/xml; charset=utf-8',
-    			'SOAPAction: "http://schemas.microsoft.com/xrm/2011/Contracts/Services/IOrganizationService/'.$action.'"'
+    			'SOAPAction: "'.$action.'"'
     	);
     }
     
