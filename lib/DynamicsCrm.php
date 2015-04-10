@@ -250,10 +250,12 @@ class DynamicsCrm {
 		}else{
 			$RetrieveXml=$this->responseToXml($Response);
 			$ObjectRetrieve= new CrmResponse();
-			$ObjectRetrieve=$this->TestReturn($RetrieveXml, $ObjectRetrieve);
-			if($ObjectRetrieve->Error) return $ObjectRetrieve;
+			if (isset ( $RetrieveXml->Body->Fault )) {
+				return $this->GetCrmError($RetrieveXml);
+			}else{
 			$ObjectRetrieve=$this->ParseRetrieve($RetrieveXml, $ObjectRetrieve);
 			Return  $ObjectRetrieve;
+			}
 		}
 	}
 	
@@ -452,7 +454,18 @@ class DynamicsCrm {
             </s:Body>
         </s:Envelope>';
 		// call
-			Return  $SoapRequester->sendRequest($request->getTo(), $enveloppe.$SoapEnvelope);
+		$ResponseUpdate=$SoapRequester->sendRequest($request, $enveloppe.$SoapEnvelope);
+		$XmlUpdate=$this->responseToXml($ResponseUpdate);
+		$Return = new \CrmResponse();
+		if (isset ( $XmlUpdate->Body->UpdateResponse )) {
+							$Return->NbResult = 1;
+							$Return->Result = true;
+						} else {
+							$Return->Error = True;
+							$Return->ErrorCode = 'Unknown Error';
+							$Return->ErrorMessage = 'Unknown Error';
+						}
+		return $Return;
 	}
 	
 	/**
@@ -1102,7 +1115,7 @@ class DynamicsCrm {
 				case 'string' :
 				default :
 					$this->TestParameter ( $Param, 'value' );
-					$TxtAttribute .= '<c:value i:type="d:string" xmlns:d="http://www.w3.org/2001/XMLSchema">' . $Param ['value'] . '</c:value>';
+					$TxtAttribute .= '<c:value i:type="d:string" xmlns:d="http://www.w3.org/2001/XMLSchema"><![CDATA[' . $Param ['value'] . ']]</c:value>';
 					break;
 				case 'EntityReference' :
 				case 'entityreference' :
