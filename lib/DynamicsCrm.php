@@ -1115,7 +1115,7 @@ class DynamicsCrm {
 				case 'string' :
 				default :
 					$this->TestParameter ( $Param, 'value' );
-					$TxtAttribute .= '<c:value i:type="d:string" xmlns:d="http://www.w3.org/2001/XMLSchema"><![CDATA[' . $Param ['value'] . ']]</c:value>';
+					$TxtAttribute .= '<c:value i:type="d:string" xmlns:d="http://www.w3.org/2001/XMLSchema"><![CDATA[' . $Param ['value'] . ']]></c:value>';
 					break;
 				case 'EntityReference' :
 				case 'entityreference' :
